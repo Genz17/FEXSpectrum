@@ -1,6 +1,8 @@
 import torch
 
-def LaplaceOperator(u, x, dim):
+def LaplaceOperator(func, x, dim):
+    x.requires_grad = True
+    u = func(x)
     v = torch.ones(u.shape, device='cuda:0')
     bs = x.size(0)
     ux = torch.autograd.grad(u, x, grad_outputs=v, create_graph=True)[0]

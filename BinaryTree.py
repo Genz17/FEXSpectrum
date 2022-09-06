@@ -4,7 +4,7 @@ from Operations import unary_functions, binary_functions, unary_functions_str, b
 from Operations import UnaryOperation, BinaryOperation
 
 class BinaryTreeNode(object):
-    def __init__(self, is_unary, count=0, isLeave=True):
+    def __init__(self, is_unary, isLeave=True, count=0):
         self.operation      = lambda x:0
         self.is_unary       = is_unary
         self.count          = count
@@ -49,18 +49,10 @@ def BasicTreeGen():
     tree = BinaryTreeNode(False)
     tree.insertLeft(False)
     tree.insertRight(False)
-    tree.leftchild.insertLeft(False)
-    tree.leftchild.insertRight(False)
-    tree.rightchild.insertLeft(False)
-    tree.rightchild.insertRight(False)
-    tree.leftchild.leftchild.insertLeft(True)
-    tree.leftchild.leftchild.insertRight(True)
-    tree.leftchild.rightchild.insertLeft(True)
-    tree.leftchild.rightchild.insertRight(True)
-    tree.rightchild.leftchild.insertLeft(True)
-    tree.rightchild.leftchild.insertRight(True)
-    tree.rightchild.rightchild.insertLeft(True)
-    tree.rightchild.rightchild.insertRight(True)
+    tree.leftchild.insertLeft(True)
+    tree.leftchild.insertRight(True)
+    tree.rightchild.insertLeft(True)
+    tree.rightchild.insertRight(True)
     NodeNumCompute(tree)
     return tree
 
@@ -132,12 +124,13 @@ def LeaveNumCompute(tree):
     return leaveList
 
 class TrainableTree(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim, outputSize):
         super(TrainableTree, self).__init__()
         self.dim                = dim
+        self.outputSize         = outputSize
         self.tree               = BasicTreeGen()
         self.operators          = {}
-        self.linearTransform    = {str(i):nn.Sequential(nn.Linear(dim, dim),nn.ReLU(),nn.Linear(dim, 1)) for i in LeaveNumCompute(self.tree)}
+        self.linearTransform    = {str(i):nn.Sequential(nn.Linear(dim, dim),nn.ReLU(),nn.Linear(dim, outputSize)) for i in LeaveNumCompute(self.tree)}
         self.linearTransform    = nn.ModuleDict(self.linearTransform)
         self.OperatorsGen(self.tree)
         self.operators          = nn.ModuleDict(self.operators)

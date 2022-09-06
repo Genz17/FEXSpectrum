@@ -27,44 +27,39 @@ def train(model, dim, max_iter, f):
 
         actions = model.sample()
         treeBuffer = TreeTrain(f, model, actions, domain, 1, dim, 1)
-        data = torch.rand((100, dim), device='cuda:0', requires_grad=True)*2-1
 
         errList = torch.zeros(model.batchSize)
         for batch in range(model.batchSize):
-            func = lambda x,j: sum([Coeff(j,treeinx,T,'a', order)*treeBuffer[batch][str(treeinx)](x)+Coeff(j,treeinx,T,'b',order)*LaplaceOperator(treeBuffer[batch][str(treeinx)](x),x,dim)\
-for treeinx in range(model.treeNum)])
-            funcList = [lambda x:func(x,j)-mc.integrate(lambda t:f(x, t)*Psi(order, j, T)(t), dim=1, integration_domain=[[0,T]]) for j in range(1, model.treeNum+1)]
-            lossList = [Coeff_r(model.treeNum, j)*L2Norm(dim, domain, funcList[j-1])**2 for j in range(1,model.treeNum+1)]
-            loss = sum(lossList) + model.treeNum**(-4)*L2Norm(dim, domain, lambda x:LaplaceOperator(treeBuffer[batch][str(model.treeNum-1)](x),x,dim))
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*treeBuffer[batch](x)[:,n].view(100,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda s:treeBuffer[batch](s)[:, n].view(100,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
+                        t:f(x,t),1,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
 
+            loss = sum([mc.integrate(funcList[i],dim,100,[domain])**2 for i in range(model.tree.outputSize)])
             errList[batch] = loss
 
         errinx = torch.argmin(errList)
         err = torch.min(errList)
-        buffer.refresh(Candidate(treeBuffer[errinx], [actions[i][errinx].cpu().detach().numpy().tolist() for i in range(model.treeNum)], err.item()))
+        buffer.refresh(Candidate(treeBuffer[errinx], actions[errinx].cpu().detach().numpy().tolist(), err.item()))
         optimizer.zero_grad()
         err.backward()
         optimizer.step()
         for i in range(len(buffer.bufferzone)):
             print(buffer.bufferzone[i].action, buffer.bufferzone[i].error)
 
-        with torch.no_grad():
-            #x = DataGen(100, dim, -1, 1).cuda()
-            x = torch.linspace(-1,1,100, device='cuda:0').view(100, 1).repeat(1,dim)
-            z = torch.zeros(x.shape, device='cuda:0')
-            #z = 0.5*torch.sum(x**2, 1).view(100,1)
-            y = 0
-            for i in range(model.treeNum):
-                y += (buffer.bufferzone[0].treeDict)[str(i)](x)
-            print('relerr: {}'.format(torch.norm(y-z)))
-            x = x.view(100).cpu().detach().numpy()
-            y = y.view(100).cpu().detach().numpy()
-            fig = plt.figure()
-            plt.plot(x,y)
-            plt.show()
+        #with torch.no_grad():
+        #    #x = DataGen(100, dim, -1, 1).cuda()
+        #    x = torch.linspace(-1,1,100, device='cuda:0').view(100, 1).repeat(1,dim)
+        #    z = torch.zeros(x.shape, device='cuda:0')
+        #    #z = 0.5*torch.sum(x**2, 1).view(100,1)
+        #    y = (buffer.bufferzone[0].tree)(x)
+        #    print('relerr: {}'.format(torch.norm(y-z)))
+        #    x = x.view(100).cpu().detach().numpy()
+        #    y = y.view(100).cpu().detach().numpy()
+        #    fig = plt.figure()
+        #    plt.plot(x,y)
+        #    plt.show()
 
 
 if __name__ == '__main__':
-    tree = {str(i):BinaryTree.TrainableTree(1).cuda() for i in range(3)}
+    tree = BinaryTree.TrainableTree(1, 1).cuda()
     model = Controller(tree).cuda()
-    train(model, 1, 10, lambda x,t : x+t)
+    train(model, 1, 10, lambda x,t : torch.norm(x)+t)
