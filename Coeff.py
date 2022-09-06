@@ -1,3 +1,31 @@
+def Legendre(n):
+    if n == 0:
+        return lambda x:0*x+1
+    elif n == 1:
+        return lambda x:x
+    else:
+        return lambda x:((2*n-1)/(n))*x*Legendre(n-1)(x) - ((n-1)/n)*Legendre(n-2)(x)
+
+
+
+def Psi(order, n, T):
+    if order == 1:
+        if n == 1:
+            return lambda t:Legendre(0)(2*t/T - 1)
+        else:
+            return lambda t:(Legendre(n-1)(2*t/T - 1)-Legendre(n-2)(2*t/T - 1))
+    if order == 2:
+        if n == 1:
+            return lambda t:(Legendre(1)(2*t/T - 1)+Legendre(0)(2*t/T - 1))
+        else:
+            return lambda t:((1-1/n)*Legendre(n)(2*t/T - 1)-(2-1/n)*Legendre(n-1)(2*t/T - 1)+Legendre(n-2)(2*t/T - 1))
+
+
+def Coeff_r(N, j):
+    return (2*(N*(N+1)*(2*N+1)/6 + j*(j+1)*(2*j+1)/6) - (N+j)*(N-j+1)/2)/(N**3)
+
+
+
 def Coeff(j, n, T, coeff_type, order=1):
     if coeff_type == 'a':
         if order == 1:

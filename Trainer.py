@@ -1,16 +1,24 @@
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from torchquad import MonteCarlo, set_up_backend
 import BinaryTree
 from Equation import LHS_pde,RHS_pde,true_solution,LaplaceOperator
 from Coeff import Coeff
 from DataGen import DataGen
 from Controller import Controller
-from GetReward import GetReward
+from TreeTrain import TreeTrain
 from OperationBuffer import Buffer
 from Candidate import Candidate
+from Coeff import *
+from L2Norm import L2Norm
+set_up_backend("torch", data_type="float32")
+mc = MonteCarlo()
 
-def train(model, dim, max_iter):
+def train(model, dim, max_iter, f):
+    order = 1
+    T = 1
+    domain = [-1,1]
     optimizer = torch.optim.Adam(model.NN.parameters())
     buffer = Buffer(10)
 
@@ -18,19 +26,16 @@ def train(model, dim, max_iter):
         print('-----------step:{}---------------'.format(step))
 
         actions = model.sample()
-        treeBuffer = GetReward(model, actions, -1, 1, 1, dim, 1)
+        treeBuffer = TreeTrain(f, model, actions, domain, 1, dim, 1)
         data = torch.rand((100, dim), device='cuda:0', requires_grad=True)*2-1
 
         errList = torch.zeros(model.batchSize)
         for batch in range(model.batchSize):
-            loss = 0
-            for j in range(model.treeNum):
-                ans = 0
-                for treeinx in range(model.treeNum):
-                    res = treeBuffer[batch][str(treeinx)](data)
-                    ans += Coeff(j, treeinx, 1, 'a', order=1)*res
-                    ans += Coeff(j, treeinx, 1, 'b', order=1)*LaplaceOperator(res, data, dim)
-                loss += torch.norm(ans)
+            func = lambda x,j: sum([Coeff(j,treeinx,T,'a', order)*treeBuffer[batch][str(treeinx)](x)+Coeff(j,treeinx,T,'b',order)*LaplaceOperator(treeBuffer[batch][str(treeinx)](x),x,dim)\
+for treeinx in range(model.treeNum)])
+            funcList = [lambda x:func(x,j)-mc.integrate(lambda t:f(x, t)*Psi(order, j, T)(t), dim=1, integration_domain=[[0,T]]) for j in range(1, model.treeNum+1)]
+            lossList = [Coeff_r(model.treeNum, j)*L2Norm(dim, domain, funcList[j-1])**2 for j in range(1,model.treeNum+1)]
+            loss = sum(lossList) + model.treeNum**(-4)*L2Norm(dim, domain, lambda x:LaplaceOperator(treeBuffer[batch][str(model.treeNum-1)](x),x,dim))
 
             errList[batch] = loss
 
@@ -52,14 +57,14 @@ def train(model, dim, max_iter):
             for i in range(model.treeNum):
                 y += (buffer.bufferzone[0].treeDict)[str(i)](x)
             print('relerr: {}'.format(torch.norm(y-z)))
-            #x = x.view(100).cpu().detach().numpy()
-            #y = y.view(100).cpu().detach().numpy()
-            #fig = plt.figure()
-            #plt.plot(x,y)
-            #plt.show()
+            x = x.view(100).cpu().detach().numpy()
+            y = y.view(100).cpu().detach().numpy()
+            fig = plt.figure()
+            plt.plot(x,y)
+            plt.show()
 
 
 if __name__ == '__main__':
-    tree = {str(i):BinaryTree.TrainableTree(10).cuda() for i in range(1)}
+    tree = {str(i):BinaryTree.TrainableTree(1).cuda() for i in range(3)}
     model = Controller(tree).cuda()
-    train(model, 10, 10)
+    train(model, 1, 10, lambda x,t : x+t)
