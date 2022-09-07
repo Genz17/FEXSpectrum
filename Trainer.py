@@ -28,10 +28,12 @@ def train(model, dim, max_iter, f):
 
         errList = torch.zeros(model.batchSize)
         for batch in range(model.batchSize):
-            funcList = [lambda x:torch.sum(Coeff_All(j,model.tree.outputSize,T,'a',1).view(1,-1).repeat(1000,1)*model.tree(x)+Coeff_All(j,model.tree.outputSize,T,'b',1).view(1,-1).repeat(1000,1)*LaplaceOperator(lambda\
-                        s:model.tree(s),x,dim), dim=1)- mc.integrate(lambda \
-                        t:f(x,t),1,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
-            loss = sum([mc.integrate(funcList[i],dim,1000,domain)**2 for i in range(model.tree.outputSize)])
+            model.treeDict = treeBuffer[batch]
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+                        s:model.treeDict[str(n)](s),x,dim) for n in range(model.treeNum)]) - mc.integrate(lambda \
+                        t:f(x,t),1,integration_domain=[[0,T]]) for j in range(1, model.treeNum)]
+
+            loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:funcList[i](x)**2,dim,1000,domain) for i in range(len(funcList))])
             errList[batch] = loss
 
         errinx = torch.argmin(errList)
@@ -43,18 +45,18 @@ def train(model, dim, max_iter, f):
         for i in range(len(buffer.bufferzone)):
             print(buffer.bufferzone[i].action, buffer.bufferzone[i].error)
 
-        with torch.no_grad():
-            outputFunc = lambda x,t: sum([buffer.bufferzone[0].tree(x)[:,i]*Phi(order,i+1,T)(t) for i in range(model.tree.outputSize)])
-            x = torch.rand(10, dim, device='cuda:0')
-            z = outputFunc(x, 1.)
-            y = func(x,torch.tensor(1.))
-            print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
+        #with torch.no_grad():
+        #    outputFunc = lambda x,t: sum([buffer.bufferzone[0].tree(x)[:,i]*Phi(order,i+1,T)(t) for i in range(model.tree.outputSize)])
+        #    x = torch.rand(10, dim, device='cuda:0')
+        #    z = outputFunc(x, 1.)
+        #    y = func(x,torch.tensor(1.))
+        #    print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
 
 
 
 if __name__ == '__main__':
-    dim = 1
-    func = lambda x,t:torch.sum(torch.exp(x),1).view(x.shape[0],1)*torch.exp(t)
-    tree = BinaryTree.TrainableTree(dim, 1).cuda()
+    dim = 2
+    func = lambda x,t:torch.sum(torch.exp(x),1).view(x.shape[0],1)+torch.exp(t)
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(3)}
     model = Controller(tree).cuda()
     train(model, dim, 100, lambda x,t : RHS4Heat(func,x,t,dim))

@@ -14,35 +14,37 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
     treeBuffer = []
 
     for batch in range(batchSize):
-        batchOperation = batchOperations[batch]
-        model.tree.PlaceOP(batchOperation)
-        model.tree.LinearGen()
+        for i in range(model.treeNum):
+            model.treeDict[str(i)].PlaceOP(batchOperations[i][batch])
+            model.treeDict[str(i)].LinearGen()
 
-        optimizer = torch.optim.Adam(model.tree.parameters())
+        optimizer = torch.optim.Adam(model.treeDict.parameters())
 
         for _ in range(20):
             optimizer.zero_grad()
-            funcList = [lambda x:torch.sum(Coeff_All(j,model.tree.outputSize,T,'a',1).view(1,-1).repeat(100,1)*model.tree(x)+Coeff_All(j,model.tree.outputSize,T,'b',1).view(1,-1).repeat(100,1)*LaplaceOperator(lambda\
-                        s:model.tree(s),x,dim), dim=1)- mc.integrate(lambda \
-                        t:f(x,t),1,100,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
-            loss = sum([mc.integrate(funcList[i],dim,100,domain)**2 for i in range(model.tree.outputSize)])
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+                        s:model.treeDict[str(n)](s),x,dim) for n in range(model.treeNum)]) - mc.integrate(lambda \
+                        t:f(x,t),1,integration_domain=[[0,T]]) for j in range(1, model.treeNum)]
+
+            loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:funcList[i](x)**2,dim,1000,domain) for i in range(len(funcList))])
             loss.backward()
             optimizer.step()
 
 
-        optimizer = torch.optim.LBFGS(model.tree.parameters(), lr=1, max_iter=20)
+        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=20)
 
         def closure():
             optimizer.zero_grad()
-            funcList = [lambda x:torch.sum(Coeff_All(j,model.tree.outputSize,T,'a',1).view(1,-1).repeat(1000,1)*model.tree(x)+Coeff_All(j,model.tree.outputSize,T,'b',1).view(1,-1).repeat(1000,1)*LaplaceOperator(lambda\
-                        s:model.tree(s),x,dim), dim=1)- mc.integrate(lambda \
-                        t:f(x,t),1,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
-            loss = sum([mc.integrate(funcList[i],dim,1000,domain)**2 for i in range(model.tree.outputSize)])
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+                        s:model.treeDict[str(n)](s),x,dim) for n in range(model.treeNum)]) - mc.integrate(lambda \
+                        t:f(x,t),1,integration_domain=[[0,T]]) for j in range(1, model.treeNum)]
+
+            loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:funcList[i](x)**2,dim,1000,domain) for i in range(len(funcList))])
             loss.backward()
             return loss
 
-        #optimizer.step(closure)
-        treeBuffer.append(copy.deepcopy(model.tree))
+        optimizer.step(closure)
+        treeBuffer.append(copy.deepcopy(model.treeDict))
 
 
     return treeBuffer
