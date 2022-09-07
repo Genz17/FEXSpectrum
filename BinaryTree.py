@@ -49,10 +49,18 @@ def BasicTreeGen():
     tree = BinaryTreeNode(False)
     tree.insertLeft(False)
     tree.insertRight(False)
-    tree.leftchild.insertLeft(True)
-    tree.leftchild.insertRight(True)
-    tree.rightchild.insertLeft(True)
-    tree.rightchild.insertRight(True)
+    tree.leftchild.insertLeft(False)
+    tree.leftchild.insertRight(False)
+    tree.rightchild.insertLeft(False)
+    tree.rightchild.insertRight(False)
+    tree.leftchild.leftchild.insertLeft(True)
+    tree.leftchild.leftchild.insertRight(True)
+    tree.leftchild.rightchild.insertLeft(True)
+    tree.leftchild.rightchild.insertRight(True)
+    tree.rightchild.leftchild.insertLeft(True)
+    tree.rightchild.leftchild.insertRight(True)
+    tree.rightchild.rightchild.insertLeft(True)
+    tree.rightchild.rightchild.insertRight(True)
     NodeNumCompute(tree)
     return tree
 
@@ -136,7 +144,9 @@ class TrainableTree(nn.Module):
         self.operators          = nn.ModuleDict(self.operators)
 
     def forward(self, inputData):
-        return ComputeThroughTree(self.tree, self.linearTransform, inputData)
+        a = torch.prod(inputData)**2
+        b = torch.prod(inputData-torch.ones_like(inputData))**2
+        return a*b*ComputeThroughTree(self.tree, self.linearTransform, inputData)
 
     def PlaceOP(self, operationList):
         OperationPlace(self.tree, operationList, self.operators)

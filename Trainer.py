@@ -3,22 +3,20 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from torchquad import MonteCarlo, set_up_backend
 import BinaryTree
-from Equation import LHS_pde,RHS_pde,true_solution,LaplaceOperator
+from Equation import LHS_pde,RHS_pde,true_solution,LaplaceOperator,RHS4Heat
 from Coeff import Coeff
-from DataGen import DataGen
 from Controller import Controller
 from TreeTrain import TreeTrain
 from OperationBuffer import Buffer
 from Candidate import Candidate
 from Coeff import *
-from L2Norm import L2Norm
 set_up_backend("torch", data_type="float32")
 mc = MonteCarlo()
 
 def train(model, dim, max_iter, f):
     order = 1
     T = 1
-    domain = [-1,1]
+    domain = [[0,1] for i in range(dim)]
     optimizer = torch.optim.Adam(model.NN.parameters())
     buffer = Buffer(10)
 
@@ -30,10 +28,11 @@ def train(model, dim, max_iter, f):
 
         errList = torch.zeros(model.batchSize)
         for batch in range(model.batchSize):
-            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*treeBuffer[batch](x)[:,n].view(100,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda s:treeBuffer[batch](s)[:, n].view(100,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.tree(x)[:,n].view(1000,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+                        s:model.tree(s)[:, n].view(1000,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
                         t:f(x,t),1,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
 
-            loss = sum([mc.integrate(funcList[i],dim,100,[domain])**2 for i in range(model.tree.outputSize)])
+            loss = sum([mc.integrate(funcList[i],dim,1000,domain)**2 for i in range(model.tree.outputSize)])
             errList[batch] = loss
 
         errinx = torch.argmin(errList)
@@ -59,7 +58,9 @@ def train(model, dim, max_iter, f):
         #    plt.show()
 
 
+
 if __name__ == '__main__':
-    tree = BinaryTree.TrainableTree(1, 1).cuda()
+    func = lambda x,t:torch.sum(torch.exp(x),1).view(x.shape[0],10)*torch.exp(t)
+    tree = BinaryTree.TrainableTree(10, 1).cuda()
     model = Controller(tree).cuda()
-    train(model, 1, 10, lambda x,t : torch.norm(x)+t)
+    train(model, 10, 100, lambda x,t : RHS4Heat(func,x,t,2))

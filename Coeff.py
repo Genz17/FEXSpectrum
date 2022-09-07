@@ -7,6 +7,15 @@ def Legendre(n):
         return lambda x:((2*n-1)/(n))*x*Legendre(n-1)(x) - ((n-1)/n)*Legendre(n-2)(x)
 
 
+def Phi(order, n, T):
+    if order == 1:
+        return lambda t:Legendre(n)(2*t/T - 1)+Legendre(n-1)(2*t/T - 1)
+    if order == 2:
+        if n == 1:
+            return lambda t:(Legendre(1)(2*t/T - 1)+Legendre(0)(2*t/T - 1))
+        else:
+            return lambda t:((1-1/n)*Legendre(n)(2*t/T - 1)+(2-1/n)*Legendre(n-1)(2*t/T - 1)+Legendre(n-2)(2*t/T - 1))
+
 
 def Psi(order, n, T):
     if order == 1:
@@ -16,7 +25,7 @@ def Psi(order, n, T):
             return lambda t:(Legendre(n-1)(2*t/T - 1)-Legendre(n-2)(2*t/T - 1))
     if order == 2:
         if n == 1:
-            return lambda t:(Legendre(1)(2*t/T - 1)+Legendre(0)(2*t/T - 1))
+            return lambda t:(Legendre(1)(2*t/T - 1)-Legendre(0)(2*t/T - 1))
         else:
             return lambda t:((1-1/n)*Legendre(n)(2*t/T - 1)-(2-1/n)*Legendre(n-1)(2*t/T - 1)+Legendre(n-2)(2*t/T - 1))
 

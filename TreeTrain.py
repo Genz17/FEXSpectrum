@@ -22,10 +22,11 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
 
         for _ in range(20):
             optimizer.zero_grad()
-            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.tree(x)[:,n].view(100,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda s:model.tree(s)[:, n].view(100,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.tree(x)[:,n].view(1000,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+                        s:model.tree(s)[:, n].view(1000,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
                         t:f(x,t),1,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
 
-            loss = sum([mc.integrate(funcList[i],dim,100,[domain])**2 for i in range(model.tree.outputSize)])
+            loss = sum([mc.integrate(funcList[i],dim,1000,domain)**2 for i in range(model.tree.outputSize)])
             loss.backward()
             optimizer.step()
 
@@ -34,10 +35,12 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
 
         def closure():
             optimizer.zero_grad()
-            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.tree(x)[:,n].view(100,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda s:model.tree(s)[:, n].view(100,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
+            optimizer.zero_grad()
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.tree(x)[:,n].view(1000,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+                        s:model.tree(s)[:, n].view(1000,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
                         t:f(x,t),1,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
 
-            loss = sum([mc.integrate(funcList[i],dim,100,[domain])**2 for i in range(model.tree.outputSize)])
+            loss = sum([mc.integrate(funcList[i],dim,1000,domain)**2 for i in range(model.tree.outputSize)])
             loss.backward()
             return loss
 
