@@ -19,16 +19,19 @@ def RHS4Heat(func, x, t, dim):
 def LaplaceOperator(func, x, dim):
     x.requires_grad = True
     u = func(x)
-    v = torch.ones(u.shape, device='cuda:0')
+    v = torch.ones(u[:,0:1].shape, device='cuda:0')
     bs = x.size(0)
-    ux = torch.autograd.grad(u, x, grad_outputs=v, create_graph=True)[0]
-    uxx = torch.zeros(bs, dim, device='cuda:0')
-    for i in range(dim):
-        ux_tem = ux[:, i:i+1]
-        uxx_tem = torch.autograd.grad(ux_tem, x, grad_outputs=v, create_graph=True)[0]
-        uxx[:, i] = uxx_tem[:, i]
-    LHS = -torch.sum(uxx, dim=1, keepdim=True)
-    return LHS
+    res = torch.zeros(bs, u.shape[1])
+    for j in range(u.shape[1]):
+        ux = torch.autograd.grad(u[:,j:j+1], x, grad_outputs=v, create_graph=True)[0]
+        uxx = torch.zeros(bs, dim, device='cuda:0')
+        for i in range(dim):
+            ux_tem = ux[:, i:i+1]
+            uxx_tem = torch.autograd.grad(ux_tem, x, grad_outputs=v, create_graph=True)[0]
+            uxx[:, i] = uxx_tem[:, i]
+        LHS = -torch.sum(uxx, dim=1, keepdim=True).view(-1,1)
+        res[:,j:j+1] = LHS
+    return res
 
 
 def LHS_pde(u, x, dim_set):

@@ -1,3 +1,4 @@
+import torch
 def Legendre(n):
     if n == 0:
         return lambda x:0*x+1
@@ -83,4 +84,9 @@ def Coeff(j, n, T, coeff_type, order=1):
             else:
                 return 0
 
+def Coeff_All(j, n, T, coeff_type, order):
+    res = torch.zeros(n,1, device='cuda:0')
+    for i in range(1,n+1):
+        res[i-1] = Coeff(j,i,T,coeff_type,order)
+    return res
 

@@ -28,10 +28,9 @@ def train(model, dim, max_iter, f):
 
         errList = torch.zeros(model.batchSize)
         for batch in range(model.batchSize):
-            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.tree(x)[:,n].view(1000,1)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
-                        s:model.tree(s)[:, n].view(1000,1),x,dim) for n in range(model.tree.outputSize)])- mc.integrate(lambda \
+            funcList = [lambda x:torch.sum(Coeff_All(j,model.tree.outputSize,T,'a',1).view(1,-1).repeat(1000,1)*model.tree(x)+Coeff_All(j,model.tree.outputSize,T,'b',1).view(1,-1).repeat(1000,1)*LaplaceOperator(lambda\
+                        s:model.tree(s),x,dim), dim=1)- mc.integrate(lambda \
                         t:f(x,t),1,integration_domain=[[0,T]])  for j in range(1, model.tree.outputSize+1)]
-
             loss = sum([mc.integrate(funcList[i],dim,1000,domain)**2 for i in range(model.tree.outputSize)])
             errList[batch] = loss
 
@@ -60,7 +59,8 @@ def train(model, dim, max_iter, f):
 
 
 if __name__ == '__main__':
-    func = lambda x,t:torch.sum(torch.exp(x),1).view(x.shape[0],10)*torch.exp(t)
-    tree = BinaryTree.TrainableTree(10, 1).cuda()
+    dim = 3
+    func = lambda x,t:torch.sum(torch.exp(x),1).view(x.shape[0],1)*torch.exp(t)
+    tree = BinaryTree.TrainableTree(dim, 2).cuda()
     model = Controller(tree).cuda()
-    train(model, 10, 100, lambda x,t : RHS4Heat(func,x,t,2))
+    train(model, dim, 100, lambda x,t : RHS4Heat(func,x,t,dim))
