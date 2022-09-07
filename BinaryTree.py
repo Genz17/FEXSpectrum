@@ -84,12 +84,15 @@ def ComputeThroughTree(treeNode, linearTransform, inputData):
 
     if treeNode.leftchild != None and treeNode.rightchild == None:
         ans = treeNode.operation(ComputeThroughTree(treeNode.leftchild,linearTransform,inputData))
+        ans = linearTransform[str(treeNode.count)](ans)
 
     if treeNode.leftchild == None and treeNode.rightchild != None:
         ans = treeNode.operation(ComputeThroughTree(treeNode.rightchild,linearTransform,inputData))
+        ans = linearTransform[str(treeNode.count)](ans)
 
     if treeNode.leftchild != None and treeNode.rightchild != None:
         ans = treeNode.operation(ComputeThroughTree(treeNode.leftchild,linearTransform,inputData),ComputeThroughTree(treeNode.rightchild,linearTransform,inputData))
+        ans = linearTransform[str(treeNode.count)](ans)
     return ans
 
 def NodeNumCompute(tree, num=0):
@@ -138,7 +141,9 @@ class TrainableTree(nn.Module):
         self.outputSize         = outputSize
         self.tree               = BasicTreeGen()
         self.operators          = {}
-        self.linearTransform    = {str(i):nn.Sequential(nn.Linear(dim, dim),nn.ReLU(),nn.Linear(dim, outputSize)) for i in LeaveNumCompute(self.tree)}
+        self.linearTransform    = {str(i):nn.Sequential(nn.Linear(outputSize, outputSize),nn.ReLU(),nn.Linear(outputSize, outputSize)) for i in range(1,self.tree.count+1)}
+        for i in LeaveNumCompute(self.tree):
+            self.linearTransform[str(i)] = nn.Sequential(nn.Linear(dim, dim),nn.ReLU(),nn.Linear(dim, outputSize))
         self.linearTransform    = nn.ModuleDict(self.linearTransform)
         self.OperatorsGen(self.tree)
         self.operators          = nn.ModuleDict(self.operators)

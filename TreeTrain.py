@@ -28,7 +28,6 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
             loss = sum([mc.integrate(funcList[i],dim,100,domain)**2 for i in range(model.tree.outputSize)])
             loss.backward()
             optimizer.step()
-            print(_)
 
 
         optimizer = torch.optim.LBFGS(model.tree.parameters(), lr=1, max_iter=20)
