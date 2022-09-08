@@ -21,16 +21,19 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, laplaceFunc=None
 
         optimizer = torch.optim.Adam(model.treeDict.parameters())
 
-        for _ in range(20):
+        for _ in range(0):
             optimizer.zero_grad()
-            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x)+ Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
                         s:model.treeDict[str(n)](s),x,dim) for n in range(model.treeNum)]) - mc.integrate(lambda \
                         t:f(x,t),1,integration_domain=[[0,T]]) for j in range(1, model.treeNum+1)]
 
 
-            loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:funcList[i](x)**2,dim,1000,domain) for i in range(len(funcList))])
+            loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:funcList[i](x)**2,dim,1000,domain) for i in range(len(funcList))])+\
+                        mc.integrate(lambda x:LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x,dim)**2,dim,1000,domain)
             print(_,loss)
             loss.backward()
+            del funcList
+            del loss
             optimizer.step()
 
 
@@ -42,7 +45,8 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, laplaceFunc=None
                         s:model.treeDict[str(n)](s),x,dim) for n in range(model.treeNum)]) - mc.integrate(lambda \
                         t:f(x,t),1,integration_domain=[[0,T]]) for j in range(1, model.treeNum+1)]
 
-            loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:funcList[i](x)**2,dim,1000,domain) for i in range(len(funcList))])
+            loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:funcList[i](x)**2,dim,1000,domain) for i in range(len(funcList))])+\
+                        mc.integrate(lambda x:LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x,dim)**2,dim,1000,domain)
             loss.backward()
             return loss
 

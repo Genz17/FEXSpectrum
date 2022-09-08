@@ -5,7 +5,7 @@ def RHS4Heat(func, x, t, dim):
     t.requires_grad = True
     u = func(x, t)
     v = torch.ones(u.shape, device='cuda:0')
-    ut = torch.autograd.grad(u, t, torch.ones_like(u))[0]
+    ut = torch.autograd.grad(u, t, torch.ones_like(u), create_graph=True)[0]
     bs = x.size(0)
     ux = torch.autograd.grad(u, x, grad_outputs=v, create_graph=True)[0]
     uxx = torch.zeros(bs, dim, device='cuda:0')
