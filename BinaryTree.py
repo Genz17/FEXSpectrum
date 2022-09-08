@@ -143,9 +143,7 @@ class TrainableTree(nn.Module):
         self.operators          = nn.ModuleDict(self.operators)
 
     def forward(self, inputData):
-        a = torch.prod(inputData)**2
-        b = torch.prod(inputData-torch.ones_like(inputData))**2
-        res = a*b*ComputeThroughTree(self.tree, self.linearTransform, inputData)
+        res = ComputeThroughTree(self.tree, self.linearTransform, inputData)
         return res
 
     def PlaceOP(self, operationList):
