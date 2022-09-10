@@ -11,7 +11,7 @@ def RHS4Heat(func, x, t, dim):
     uxx = torch.zeros(bs, dim, device='cuda:0')
     for i in range(dim):
         ux_tem = ux[:, i:i+1]
-        uxx_tem = torch.autograd.grad(ux_tem, x, grad_outputs=v, create_graph=True)[0]
+        uxx_tem = torch.autograd.grad(ux_tem, x, grad_outputs=torch.ones_like(ux_tem), create_graph=True)[0]
         uxx[:, i] = uxx_tem[:, i]
     LHS = -torch.sum(uxx, dim=1, keepdim=True)
     return ut+LHS
