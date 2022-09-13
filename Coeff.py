@@ -9,6 +9,7 @@ def Legendre(n):
 
 
 def Phi(order, n, T):
+    # starts from 1
     if order == 1:
         return lambda t:Legendre(n)(2*t/T - 1)+Legendre(n-1)(2*t/T - 1)
     if order == 2:
@@ -31,8 +32,8 @@ def Psi(order, n, T):
             return lambda t:((1-1/n)*Legendre(n)(2*t/T - 1)-(2-1/n)*Legendre(n-1)(2*t/T - 1)+Legendre(n-2)(2*t/T - 1))
 
 
-def Coeff_r(N, j):
-    return (2*(N*(N+1)*(2*N+1)/6 + j*(j+1)*(2*j+1)/6) - (N+j)*(N-j+1)/2)/(N**3)
+def Coeff_r(treeNum, j):
+    return treeNum**(-3)*sum([k*(2*k-1) for k in range(j, treeNum+1)])
 
 
 
