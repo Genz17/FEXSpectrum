@@ -31,7 +31,7 @@ def LaplaceOperatorWitht(func, x, t, h=1e-4):
     return s
 
 def RHS4Heat(func, x, t):
-    return Partialt(func,x,t)-LaplaceOperatorWitht(func,x,t)
+    return Partialt(func,x,t)+LaplaceOperatorWitht(func,x,t)
 
 
 #def RHS4Heat(func, x, t, dim):

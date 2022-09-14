@@ -19,10 +19,10 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
 
         optimizer = torch.optim.Adam(model.treeDict.parameters())
 
-        for _ in range(20):
+        for _ in range(10):
             optimizer.zero_grad()
             data = torch.rand(1000,dim)
-            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x)+ Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x) + Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
                         s:model.treeDict[str(n)](s),x) for n in range(model.treeNum)]) - mc.integrate(lambda \
                         t:f(x,t)*Psi(order, j, T)(t),1,integration_domain=[[0,T]]) for j in range(1, model.treeNum+1)]
 
