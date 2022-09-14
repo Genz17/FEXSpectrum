@@ -10,7 +10,7 @@ class Controller(nn.Module):
         self.tanhC          = 2.5
         self.treeNum        = len(treeDict)
         self.treeDict       = nn.ModuleDict(treeDict)
-        self.batchSize      = 1
+        self.batchSize      = 5
         self.NN             = nn.Sequential(
                                 nn.Linear(20, 60),
                                 nn.ReLU(),

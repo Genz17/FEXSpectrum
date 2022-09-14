@@ -18,7 +18,7 @@ def train(model, dim, max_iter, f):
     order = 1
     T = 1
     domain = [[0,1] for i in range(dim)]
-    optimizer4model = torch.optim.Adam(model.NN.parameters(),lr=1e-2)
+    optimizer4model = torch.optim.Adam(model.NN.parameters())
     buffer = Buffer(3)
 
     for step in range(max_iter):
@@ -30,7 +30,7 @@ def train(model, dim, max_iter, f):
         errList = torch.zeros(model.batchSize)
         for batch in range(model.batchSize):
             treeDictCompute = treeBuffer[batch]
-            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*treeDictCompute[str(n)](x)+Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
+            funcList = [lambda x:sum([Coeff(j,n+1,T,'a',1)*treeDictCompute[str(n)](x)-Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
                         s:treeDictCompute[str(n)](s),x) for n in range(model.treeNum)]) - mc.integrate(lambda \
                         t:f(x,t)*Psi(order, j, T)(t),1,integration_domain=[[0,T]]) for j in range(1, model.treeNum+1)]
 
@@ -62,8 +62,8 @@ def train(model, dim, max_iter, f):
 
 if __name__ == '__main__':
     dim = 1
-    func = lambda x,t:torch.prod(x,1).view(-1,1)*torch.prod((x-torch.ones_like(x)),1).view(-1,1)*torch.log(t+1)
+    func = lambda x,t:torch.prod(x,1).view(-1,1)*torch.prod((x-torch.ones_like(x)),1).view(-1,1)
     #func = lambda x,t:(torch.sin(torch.sin(torch.sum(x,1)))-1)*torch.sin(torch.sum(x-torch.ones_like(x),1))+torch.sin(t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(10)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(5)}
     model = Controller(tree).cuda()
     train(model, dim, 100, lambda x,t : RHS4Heat(func,x,t))
