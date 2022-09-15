@@ -137,7 +137,7 @@ class TrainableTree(nn.Module):
         self.dim                = dim
         self.tree               = BasicTreeGen()
         self.operators          = {}
-        self.linearTransform    = {str(i):nn.Sequential(nn.Linear(dim, dim),nn.ReLU(),nn.Linear(dim, 1)) for i in LeaveNumCompute(self.tree)}
+        self.linearTransform    = {str(i):nn.Sequential(nn.Linear(dim, 1)) for i in LeaveNumCompute(self.tree)}
         self.linearTransform    = nn.ModuleDict(self.linearTransform)
         self.OperatorsGen(self.tree)
         self.operators          = nn.ModuleDict(self.operators)

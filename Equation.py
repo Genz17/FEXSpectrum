@@ -1,10 +1,10 @@
 import torch
 
 def Partialt(func, x, t, h=1e-4):
-    u1 = func(x,t)
+    u1 = func(x,t-h)
     u2 = func(x,t+h)
 
-    return (u2-u1)/h
+    return (u2-u1)/(2*h)
 
 def LaplaceOperator(func, x, h=1e-4):
     xNum = x.shape[1]
