@@ -12,7 +12,7 @@ def LaplaceOperator(func, x, h=1e-4):
     u1 = func(x)
     for i in range(xNum):
         deltax = torch.zeros_like(x, device='cuda:0')
-        deltax[:, i] = 1
+        deltax[:, i:i+1] = 1
         u2 = func(x+h*deltax)
         u3 = func(x-h*deltax)
         s = s + (u2+u3-2*u1)/(h**2)
@@ -24,7 +24,7 @@ def LaplaceOperatorWitht(func, x, t, h=1e-4):
     u1 = func(x, t)
     for i in range(xNum):
         deltax = torch.zeros_like(x, device='cuda:0')
-        deltax[:, i] = 1
+        deltax[:, i:i+1] = 1
         u2 = func(x+h*deltax, t)
         u3 = func(x-h*deltax, t)
         s = s + (u2+u3-2*u1)/(h**2)
