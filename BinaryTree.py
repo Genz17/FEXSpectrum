@@ -156,7 +156,7 @@ class TrainableTree(nn.Module):
         for key in self.linearTransform:
             for layer in self.linearTransform[key].modules():
                 try:
-                    nn.init.kaiming_uniform_(layer.weight)
+                    nn.init.xavier_normal_(layer.weight)
                     nn.init.zeros_(layer.bias)
                 except BaseException:
                     pass
