@@ -17,7 +17,7 @@ tp = Trapezoid()
 
 def train(model, dim, max_iter, f):
     order = 1
-    T = 0.1
+    T = 1
     domain = [[0,1] for i in range(dim)]
     optimizer4model = torch.optim.Adam(model.NN.parameters())
     buffer = Buffer(3)
@@ -50,8 +50,8 @@ def train(model, dim, max_iter, f):
         with torch.no_grad():
             outputFunc = lambda x,t: sum([buffer.bufferzone[0].treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
             x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
-            z = outputFunc(x, 0.05)
-            y = func(x,torch.tensor(0.05))
+            z = outputFunc(x, .5)
+            y = func(x,torch.tensor(.5))
             print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
             plt.plot(x.view(1000).cpu(),z.view(1000).cpu())
             plt.show()
@@ -62,8 +62,9 @@ def train(model, dim, max_iter, f):
 
 if __name__ == '__main__':
     dim = 1
-    #func = lambda x,t:torch.prod(x,1).view(-1,1)*torch.prod((x-torch.ones_like(x)),1).view(-1,1)
-    func = lambda x,t:torch.exp(2*math.pi*t*(((x**2-1)*x**2).view(-1,1)))-1
+    #func = lambda x,t:torch.prod(x,1).view(-1,1)*torch.prod((x-torch.onegit@github.com:Genz17/FEXSpectrum.gits_like(x)),1).view(-1,1)
+    func = lambda x,t:(torch.exp(-2*math.pi*t*((torch.sin(math.pi*x)*torch.sin(x)).view(-1,1)))-1)
+    f = lambda x,t : RHS4Heat(func,x,t)
     tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(10)}
     model = Controller(tree).cuda()
     train(model, dim, 100, lambda x,t : RHS4Heat(func,x,t))
