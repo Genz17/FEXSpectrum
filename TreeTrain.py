@@ -5,7 +5,7 @@ from torchquad import MonteCarlo, set_up_backend, Trapezoid
 from Equation import LHS_pde,RHS_pde,true_solution,LaplaceOperator
 from Coeff import Coeff,Psi,Coeff_r,Coeff_All
 from integration1D import integration1D
-set_up_backend("torch", data_type="float32")
+set_up_backend("torch", data_type="float64")
 mc = MonteCarlo()
 tp = Trapezoid()
 def TreeTrain(f, model, batchOperations, domain, T, dim, order):
@@ -20,7 +20,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=1e-2)
 
-        for _ in range(30):
+        for _ in range(100):
             optimizer.zero_grad()
             funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x[:,:]) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
                         s:model.treeDict[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - integration1D(lambda \

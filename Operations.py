@@ -7,8 +7,8 @@ class UnaryOperation(nn.Module):
         self.operator = operator
         self.isLeave  = isLeave
         if not isLeave:
-            self.a = nn.Parameter(torch.tensor(1.0))
-            self.b = nn.Parameter(torch.tensor(0.0))
+            self.a = nn.Parameter(torch.tensor(1.0).to(torch.float64))
+            self.b = nn.Parameter(torch.tensor(0.0).to(torch.float64))
 
     def forward(self, inputData):
         if self.isLeave:
