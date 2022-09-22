@@ -11,6 +11,7 @@ from TreeTrain import TreeTrain
 from OperationBuffer import Buffer
 from Candidate import Candidate
 from Coeff import *
+from integration1D import integration1D
 set_up_backend("torch", data_type="float32")
 mc = MonteCarlo()
 tp = Trapezoid()
@@ -32,18 +33,11 @@ def train(model, dim, max_iter, f, real_func):
         for batch in range(model.batchSize):
             treeDictCompute = treeBuffer[batch]
             funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*treeDictCompute[str(n)](x[:,:]) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
-                        s:treeDictCompute[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - tp.integrate(lambda \
-                        t:f(x,t)*Psi(order, j, T)(t),1,1000,integration_domain=[[0,T]])) for j in range(1, model.treeNum+1)]
+                        s:treeDictCompute[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - integration1D(lambda \
+                        t:f(x,t)*Psi(order, j, T)(t),[0,T])) for j in range(1, model.treeNum+1)]
 
-            loss1 = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:(funcList[i](x[:,:]))**2,dim,1000*dim,domain) for i in range(len(funcList))])+\
-                        model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,dim*1000,domain)
-            funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*treeDictCompute[str(n)](x[:,:]) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
-                        s:treeDictCompute[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - tp.integrate(lambda \
-                        t:f(x,t)*Psi(order, j, T)(t),1,1000,integration_domain=[[0,T]])) for j in range(1, model.treeNum+1)]
-
-            loss2 = sum([Coeff_r(model.treeNum,i+1)*tp.integrate(lambda x:(funcList[i](x[:,:]))**2,dim,1000*dim,domain) for i in range(len(funcList))])+\
-                        model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,dim*1000,domain)
-            loss = (loss1 + loss2)/2
+            loss = sum([Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x[:,:]))**2,[0,1]) for i in range(len(funcList))])+\
+                        model.treeNum**(-4)*integration1D(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,[0,1])
             errList[batch] = loss
 
         errinx = torch.argmin(errList)
@@ -70,6 +64,6 @@ if __name__ == '__main__':
     dim = 1
     func = lambda x,t:t*((x-1)*x.view(-1,1))
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(5)}
     model = Controller(tree).cuda()
     train(model, dim, 100, lambda x,t : RHS4Heat(func,x,t), func)
