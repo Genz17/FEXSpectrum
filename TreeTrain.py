@@ -20,13 +20,13 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=1e-2)
 
-        for _ in range(100):
+        for _ in range(10):
             optimizer.zero_grad()
-            funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x[:,:]) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
-                        s:model.treeDict[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - integration1DforT(
+            funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
+                        s:model.treeDict[str(n)](s),x) for n in range(model.treeNum)]) - integration1DforT(
                             lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+1)]
 
-            lossList = [Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x[:,:]))**2,[0,1]) for i in range(len(funcList))]
+            lossList = [Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x))**2,[0,1]) for i in range(len(funcList))]
             loss = sum(lossList) + model.treeNum**(-4)*integration1D(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,[0,1])
             print(_,loss)
             loss.backward()
@@ -40,26 +40,17 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order):
 
         def closure():
             optimizer.zero_grad()
-            if torch.rand(1).item() < 0.5:
-                funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
-                            s:model.treeDict[str(n)](s),x) for n in range(model.treeNum)]) - mc.integrate(lambda \
-                            t:f(x,t)*Psi(order, j, T)(t),1,10000,integration_domain=[[0,T]])) for j in range(1, model.treeNum+1)]
+            funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x[:,:]) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
+                        s:model.treeDict[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - integration1DforT(
+                            lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+1)]
 
-                loss = sum([Coeff_r(model.treeNum,i+1)*mc.integrate(lambda x:(funcList[i](x))**2,dim,10000*dim,domain) for i in range(len(funcList))])+\
-                            model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,dim*10000,domain)
-            else:
-                funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*model.treeDict[str(n)](x) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda\
-                            s:model.treeDict[str(n)](s),x) for n in range(model.treeNum)]) - tp.integrate(lambda \
-                            t:f(x,t)*Psi(order, j, T)(t),1,10000,integration_domain=[[0,T]])) for j in range(1, model.treeNum+1)]
-
-                loss = sum([Coeff_r(model.treeNum,i+1)*tp.integrate(lambda x:(funcList[i](x))**2,dim,10000*dim,domain) for i in range(len(funcList))])+\
-                            model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,dim*10000,domain)
-            print(loss, loss==np.nan)
-            if loss != np.nan:
-                loss.backward()
+            lossList = [Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x[:,:]))**2,[0,1]) for i in range(len(funcList))]
+            loss = sum(lossList) + model.treeNum**(-4)*integration1D(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,[0,1])
+            print(loss)
+            loss.backward()
             return loss
 
-        #optimizer.step(closure)
+        optimizer.step(closure)
         treeBuffer.append(copy.deepcopy(model.treeDict))
 
 

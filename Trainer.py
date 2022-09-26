@@ -4,14 +4,14 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from torchquad import MonteCarlo, set_up_backend, Trapezoid
 import BinaryTree
-from Equation import LHS_pde,RHS_pde,true_solution,LaplaceOperator,RHS4Heat
+from Equation import LaplaceOperator,RHS4Heat
 from Coeff import Coeff
 from Controller import Controller
 from TreeTrain import TreeTrain
 from OperationBuffer import Buffer
 from Candidate import Candidate
 from Coeff import *
-from integration1D import integration1D
+from integration1D import integration1D,integration1DforT
 set_up_backend("torch", data_type="float64")
 mc = MonteCarlo()
 tp = Trapezoid()
@@ -33,8 +33,8 @@ def train(model, dim, max_iter, f, real_func):
         for batch in range(model.batchSize):
             treeDictCompute = treeBuffer[batch]
             funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*treeDictCompute[str(n)](x[:,:]) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
-                        s:treeDictCompute[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - integration1D(lambda \
-                        t:f(x,t)*Psi(order, j, T)(t),[0,T])) for j in range(1, model.treeNum+1)]
+                        s:treeDictCompute[str(n)](s[:,:]),x) for n in range(model.treeNum)]) - integration1DforT(
+                            lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+1)]
 
             lossList = [Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x[:,:]))**2,[0,1]) for i in range(len(funcList))]
             loss = sum(lossList) + model.treeNum**(-4)*integration1D(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,[0,1])
@@ -51,8 +51,8 @@ def train(model, dim, max_iter, f, real_func):
                 print(buffer.bufferzone[i].action, buffer.bufferzone[i].error)
                 outputFunc = lambda x,t: sum([buffer.bufferzone[i].treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
                 x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
-                z = outputFunc(x, .5)
-                y = real_func(x,torch.tensor(.5))
+                z = outputFunc(x, 0.5)
+                y = real_func(x,torch.tensor(0.5))
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
                 plt.plot(x.view(1000).cpu(),z.view(1000).cpu())
                 plt.show()
@@ -62,8 +62,8 @@ def train(model, dim, max_iter, f, real_func):
 
 if __name__ == '__main__':
     dim = 1
-    func = lambda x,t:t*(x*(x-1))
+    func = lambda x,t:torch.sin(t)*(torch.exp(x*(x-1))-1)
     f = lambda x,t : RHS4Heat(func,x,t)
     tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
     model = Controller(tree).cuda()
-    train(model, dim, 100, lambda x,t : x*(x-1)-2*t, func)
+    train(model, dim, 100, f, func)

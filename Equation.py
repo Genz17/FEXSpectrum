@@ -34,7 +34,7 @@ def LaplaceOperatorWitht(func, x, t, h=1e-4):
     t = t.to(torch.float64)
     x = x.to(torch.float64)
     xNum = x.shape[1]
-    s = 0
+    s = torch.zeros_like(x)
     u1 = func(x, t)
     for i in range(xNum):
         deltax = torch.zeros_like(x, device='cuda:0')
@@ -46,7 +46,6 @@ def LaplaceOperatorWitht(func, x, t, h=1e-4):
 
 def RHS4Heat(func, x, t):
     return Partialt(func,x,t)-LaplaceOperatorWitht(func,x,t)
-
 
 #def RHS4Heat(func, x, t, dim):
 #    x.requires_grad = True
