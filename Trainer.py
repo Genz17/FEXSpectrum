@@ -51,19 +51,21 @@ def train(model, dim, max_iter, f, real_func):
                 print(buffer.bufferzone[i].action, buffer.bufferzone[i].error)
                 outputFunc = lambda x,t: sum([buffer.bufferzone[i].treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
                 x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
-                z = outputFunc(x, 0.5)
-                y = real_func(x,torch.tensor(0.5))
+                z = outputFunc(x, 0.05).view(1000,1)
+                y = real_func(x,torch.tensor(0.5)).view(1000,1)
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
-                plt.plot(x.view(1000).cpu(),z.view(1000).cpu())
-                plt.show()
-            plt.plot(x.view(1000).cpu(),y.view(1000).cpu())
-            plt.show()
+                z = outputFunc(x, 0.5).view(1000,1)
+                y = real_func(x,torch.tensor(0.5)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
+                z = outputFunc(x, 0.95).view(1000,1)
+                y = real_func(x,torch.tensor(0.5)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
 
 
 if __name__ == '__main__':
     dim = 1
     func = lambda x,t:torch.sin(t)*(torch.exp(x*(x-1))-1)
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(3)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
     model = Controller(tree).cuda()
-    train(model, dim, 100, f, func)
+    train(model, dim, 50, f, func)
