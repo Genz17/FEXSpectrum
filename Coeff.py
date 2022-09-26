@@ -1,4 +1,6 @@
 import torch
+from integration1D import integration1D, integration1DforT
+from Equation import Diffx
 def Legendre(n):
     if n == 0:
         return lambda x:0*x+1
@@ -91,3 +93,4 @@ def Coeff_All(j, n, T, coeff_type, order):
         res[i-1] = Coeff(j,i,T,coeff_type,order)
     return res
 
+#print(integration1D(lambda x:Diffx(Phi(1,10,1),x)*Psi(1,8,1)(x), [0,1])-Coeff(8,10,1,'a'))

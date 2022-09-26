@@ -62,8 +62,8 @@ def train(model, dim, max_iter, f, real_func):
 
 if __name__ == '__main__':
     dim = 1
-    func = lambda x,t:t*((x*(x-1))-1)
+    func = lambda x,t:torch.sin(t)*(torch.exp(x*(x-1))-1)
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(10)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(3)}
     model = Controller(tree).cuda()
     train(model, dim, 100, f, func)

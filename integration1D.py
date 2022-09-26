@@ -1,5 +1,4 @@
 import torch
-from Coeff import *
 from Equation import Diffx
 from torchquad import MonteCarlo, set_up_backend, Trapezoid
 
