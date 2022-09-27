@@ -17,6 +17,6 @@ def integration1DforT(func_x_t, T, x):
     nodeMat = torch.zeros(xNum,1,dtype=torch.float64,device='cuda:0')
     for j in range(xNum):
         func = lambda t:func_x_t(x[j,:].view(1,-1),t)
-        nodeMat[j,:] = tp.integrate(func, 1, 500, [[0,T]])
+        nodeMat[j,:] = tp.integrate(func, 1, 1000, [[0,T]])
     return nodeMat
 

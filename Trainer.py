@@ -23,6 +23,7 @@ def train(model, dim, max_iter, f, real_func):
     domain = [[0,1] for i in range(dim)]
     optimizer4model = torch.optim.Adam(model.NN.parameters())
     buffer = Buffer(3)
+    X = torch.rand((1000,dim), device='cuda:0')
 
     for step in range(max_iter):
         print('-----------step:{}---------------'.format(step))
@@ -52,21 +53,23 @@ def train(model, dim, max_iter, f, real_func):
             for i in range(len(buffer.bufferzone)):
                 print(buffer.bufferzone[i].action, buffer.bufferzone[i].error)
                 outputFunc = lambda x,t: sum([buffer.bufferzone[i].treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
-                x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
-                z = outputFunc(x, 0.05).view(1000,1)
-                y = real_func(x,torch.tensor(0.05)).view(1000,1)
+                z = outputFunc(X, 0.1).view(1000,1)
+                y = real_func(X,torch.tensor(0.1)).view(1000,1)
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
-                z = outputFunc(x, 0.5).view(1000,1)
-                y = real_func(x,torch.tensor(0.5)).view(1000,1)
+                z = outputFunc(X, 0.5).view(1000,1)
+                y = real_func(X,torch.tensor(0.5)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y-z)))
+                z = outputFunc(X, 0.9).view(1000,1)
+                y = real_func(X,torch.tensor(0.9)).view(1000,1)
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
-                z = outputFunc(x, 0.95).view(1000,1)
-                y = real_func(x,torch.tensor(0.95)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
+
 
 
 if __name__ == '__main__':
     dim = 2
     func = lambda x,t:torch.exp(torch.sin(2*math.pi*t)*((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1))-1
+    #func = lambda x,t:torch.exp(torch.sin(2*math.pi*t*((x**2-1)).view(-1,1)))-1
+    #func = lambda x,t:torch.sin(t)*(torch.exp(x*(x-1))-1)
     f = lambda x,t : RHS4Heat(func,x,t)
     tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
     model = Controller(tree).cuda()
