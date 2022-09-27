@@ -38,7 +38,6 @@ def Coeff_r(treeNum, j):
     return treeNum**(-3)*sum([k*(2*k-1) for k in range(j, treeNum+1)])
 
 
-
 def Coeff(j, n, T, coeff_type, order=1):
     if coeff_type == 'a':
         if order == 1:

@@ -21,11 +21,11 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=1e-1)
 
-        for _ in range(30):
+        for _ in range(10):
             optimizer.zero_grad()
             funcList = [lambda x:(sum([integration1D(lambda x:Diffx(Phi(1,n+1,1),x)*Psi(1,j,1)(x), [0,1])*model.treeDict[str(n)](x) - integration1D(lambda x:Phi(1,n+1,1)(x)*Psi(1,j,1)(x),[0,1])*LaplaceOperator(lambda \
                         s:model.treeDict[str(n)](s),x) for n in range(model.treeNum)]) - integration1DforT(
-                            lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+1)]
+                            lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+3)]
 
             lossList = [Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x))**2,[0,1]) for i in range(len(funcList))]
             loss = sum(lossList) + 0.1*model.treeNum**(-4)*integration1D(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,[0,1])
@@ -34,15 +34,15 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             with torch.no_grad():
                 outputFunc = lambda x,t: sum([model.treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
                 x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
-                z = outputFunc(x, 0.05).view(1000,1)
-                y = real_func(x,torch.tensor(0.5)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
-                z = outputFunc(x, 0.5).view(1000,1)
-                y = real_func(x,torch.tensor(0.5)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
-                z = outputFunc(x, 0.95).view(1000,1)
-                y = real_func(x,torch.tensor(0.5)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
+                z1 = outputFunc(x, 0.1).view(1000,1)
+                y1 = real_func(x,torch.tensor(0.1)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y1-z1)/torch.norm(y1)))
+                z2 = outputFunc(x, 0.5).view(1000,1)
+                y2 = real_func(x,torch.tensor(0.5)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y2-z2)/torch.norm(y2)))
+                z3 = outputFunc(x, 0.9).view(1000,1)
+                y3 = real_func(x,torch.tensor(0.9)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y3-z3)/torch.norm(y3)))
             optimizer.step()
 
 
@@ -52,7 +52,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             optimizer.zero_grad()
             funcList = [lambda x:(sum([integration1D(lambda x:Diffx(Phi(1,n+1,1),x)*Psi(1,j,1)(x), [0,1])*model.treeDict[str(n)](x) - integration1D(lambda x:Phi(1,n+1,1)(x)*Psi(1,j,1)(x),[0,1])*LaplaceOperator(lambda \
                         s:model.treeDict[str(n)](s),x) for n in range(model.treeNum)]) - integration1DforT(
-                            lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+1)]
+                            lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+3)]
 
             lossList = [Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x))**2,[0,1]) for i in range(len(funcList))]
             loss = sum(lossList) + 0.1*model.treeNum**(-4)*integration1D(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,[0,1])
@@ -61,15 +61,15 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             with torch.no_grad():
                 outputFunc = lambda x,t: sum([model.treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
                 x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
-                z = outputFunc(x, 0.05).view(1000,1)
-                y = real_func(x,torch.tensor(0.5)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
-                z = outputFunc(x, 0.5).view(1000,1)
-                y = real_func(x,torch.tensor(0.5)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
-                z = outputFunc(x, 0.95).view(1000,1)
-                y = real_func(x,torch.tensor(0.5)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
+                z1 = outputFunc(x, 0.1).view(1000,1)
+                y1 = real_func(x,torch.tensor(0.1)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y1-z1)/torch.norm(y1)))
+                z2 = outputFunc(x, 0.5).view(1000,1)
+                y2 = real_func(x,torch.tensor(0.5)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y2-z2)/torch.norm(y2)))
+                z3 = outputFunc(x, 0.9).view(1000,1)
+                y3 = real_func(x,torch.tensor(0.9)).view(1000,1)
+                print('relerr: {}'.format(torch.norm(y3-z3)/torch.norm(y3)))
             return loss
 
         optimizer.step(closure)
