@@ -157,8 +157,7 @@ class TrainableTree(nn.Module):
             for layer in self.linearTransform[key].modules():
                 #nn.init.xavier_normal_(layer.weight)
                 #nn.init.zeros_(layer.bias)
-                layer.weight = nn.Parameter(layer.weight.to(torch.float64))
-                layer.bias = nn.Parameter(layer.bias.to(torch.float64))
+                pass
 
     def OperatorsGen(self, tree):
         if tree.leftchild == None and tree.rightchild == None:
