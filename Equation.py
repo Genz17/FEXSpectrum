@@ -1,14 +1,14 @@
 import torch
 import matplotlib.pyplot as plt
 
-def Diffx(func, x, h=2e-4):
+def Diffx(func, x, h=1e-3):
     x = x.to(torch.float64)
     u1 = func(x-h)
     u2 = func(x+h)
 
     return (u2-u1)/(2*h)
 
-def Partialt(func, x, t, h=2e-4):
+def Partialt(func, x, t, h=1e-3):
     t = t.to(torch.float64)
     x = x.to(torch.float64)
     u1 = func(x,t-h)
@@ -16,7 +16,7 @@ def Partialt(func, x, t, h=2e-4):
 
     return (u2-u1)/(2*h)
 
-def LaplaceOperator(func, x, h=2e-4):
+def LaplaceOperator(func, x, h=1e-3):
     x = x.to(torch.float64)
     xNum = x.shape[1]
     s = torch.zeros_like(x)
@@ -30,7 +30,7 @@ def LaplaceOperator(func, x, h=2e-4):
     return s
 
 
-def LaplaceOperatorWitht(func, x, t, h=2e-4):
+def LaplaceOperatorWitht(func, x, t, h=1e-3):
     t = t.to(torch.float64)
     x = x.to(torch.float64)
     xNum = x.shape[1]
