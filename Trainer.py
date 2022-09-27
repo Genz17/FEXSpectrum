@@ -13,7 +13,7 @@ from Candidate import Candidate
 from funcCoeffList import funcCoeffListGen
 from Coeff import *
 from integration1D import integration1D,integration1DforT
-set_up_backend("torch", data_type="float32")
+set_up_backend("torch", data_type="float64")
 mc = MonteCarlo()
 tp = Trapezoid()
 

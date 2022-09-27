@@ -155,8 +155,10 @@ class TrainableTree(nn.Module):
     def LinearGen(self):
         for key in self.linearTransform:
             for layer in self.linearTransform[key].modules():
-                #nn.init.xavier_normal_(layer.weight)
-                #nn.init.zeros_(layer.bias)
+                nn.init.xavier_normal_(layer.weight)
+                nn.init.zeros_(layer.bias)
+                layer.weight = nn.Parameter(layer.weight.to(torch.float64))
+                layer.bias = nn.Parameter(layer.bias.to(torch.float64))
                 pass
 
     def OperatorsGen(self, tree):
