@@ -7,14 +7,15 @@ class UnaryOperation(nn.Module):
         self.operator = operator
         self.isLeave  = isLeave
         if not isLeave:
-            self.a = nn.Parameter(torch.tensor(1.0).to(torch.float64))
-            self.b = nn.Parameter(torch.tensor(0.0).to(torch.float64))
+            self.li = nn.Linear(1,1)
+            nn.init.ones_(self.li.weight)
+            nn.init.zeros_(self.li.bias)
 
     def forward(self, inputData):
         if self.isLeave:
             return self.operator(inputData)
         else:
-            return self.a*self.operator(inputData)+self.b
+            return self.li(self.operator(inputData))
 
 class BinaryOperation(nn.Module):
     def __init__(self, operator):

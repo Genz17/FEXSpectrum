@@ -23,7 +23,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=1e-2)
 
-        for _ in range(10):
+        for _ in range(100):
             optimizer.zero_grad()
             loss = 0
             for j in range(1, model.treeNum+3):
@@ -82,7 +82,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 del y
             return loss
 
-        optimizer.step(closure)
+        #optimizer.step(closure)
         treeBuffer.append(copy.deepcopy(model.treeDict))
 
 
