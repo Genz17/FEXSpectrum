@@ -14,7 +14,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
 
     batchSize = model.batchSize
     treeBuffer = []
-    X = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
+    X = torch.rand((1000,dim), device='cuda:0')
 
     for batch in range(batchSize):
         for i in range(model.treeNum):
@@ -23,15 +23,15 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=1e-2)
 
-        for _ in range(10):
+        for _ in range(0):
             optimizer.zero_grad()
             loss = 0
-            for j in range(1, model.treeNum+3):
+            for j in range(1, model.treeNum+1):
                 func = lambda x:(sum([Coeff(j,n,T,'a',1)*model.treeDict[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
                             s:model.treeDict[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
-                loss = loss + mc.integrate(lambda x:(func(x))**2,dim,1000,domain)
-            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,1,1000,domain)
+                loss = loss + mc.integrate(lambda x:(func(x))**2,dim,500,domain)
+            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,500,domain)
             print(_,loss)
             loss.backward()
             optimizer.step()
@@ -63,21 +63,21 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                             s:model.treeDict[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
                 loss = loss + Coeff_r(model.treeNum,j)*mc.integrate(lambda x:(func(x))**2,dim,1000,domain)
-            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,1,1000,domain)
+            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
             print(loss)
             loss.backward()
-            with torch.no_grad():
-                outputFunc = lambda x,t: sum([model.treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
-                x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
-                z1 = outputFunc(x, 0.1).view(1000,1)
-                y1 = real_func(x,torch.tensor(0.1)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y1-z1)/torch.norm(y1)))
-                z2 = outputFunc(x, 0.5).view(1000,1)
-                y2 = real_func(x,torch.tensor(0.5)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y2-z2)/torch.norm(y2)))
-                z3 = outputFunc(x, 0.9).view(1000,1)
-                y3 = real_func(x,torch.tensor(0.9)).view(1000,1)
-                print('relerr: {}'.format(torch.norm(y3-z3)/torch.norm(y3)))
+            #with torch.no_grad():
+            #    outputFunc = lambda x,t: sum([model.treeDict[str(j)](x)*Phi(order,j+1,T)(t) for j in range(model.treeNum)])
+            #    x = torch.linspace(0,1,1000, device='cuda:0').view(1000,1)
+            #    z1 = outputFunc(x, 0.1).view(1000,1)
+            #    y1 = real_func(x,torch.tensor(0.1)).view(1000,1)
+            #    print('relerr: {}'.format(torch.norm(y1-z1)/torch.norm(y1)))
+            #    z2 = outputFunc(x, 0.5).view(1000,1)
+            #    y2 = real_func(x,torch.tensor(0.5)).view(1000,1)
+            #    print('relerr: {}'.format(torch.norm(y2-z2)/torch.norm(y2)))
+            #    z3 = outputFunc(x, 0.9).view(1000,1)
+            #    y3 = real_func(x,torch.tensor(0.9)).view(1000,1)
+            #    print('relerr: {}'.format(torch.norm(y3-z3)/torch.norm(y3)))
             return loss
 
         optimizer.step(closure)

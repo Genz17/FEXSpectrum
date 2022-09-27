@@ -39,15 +39,15 @@ def train(model, dim, max_iter, f, real_func):
                             s:treeDictCompute[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
                 loss = loss + Coeff_r(model.treeNum,j)*mc.integrate(lambda x:(func(x))**2,dim,1000,domain)
-            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,1,1000,domain)
+            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
             errList[batch] = loss
 
         errinx = torch.argmin(errList)
         err = torch.min(errList)
         buffer.refresh(Candidate(treeBuffer[errinx], [actions[i][errinx].cpu().detach().numpy().tolist() for i in range(len(actions))], err.item()))
         optimizer4model.zero_grad()
-        #err.backward()
-        #optimizer4model.step()
+        err.backward()
+        optimizer4model.step()
         with torch.no_grad():
             for i in range(len(buffer.bufferzone)):
                 print(buffer.bufferzone[i].action, buffer.bufferzone[i].error)
@@ -65,9 +65,9 @@ def train(model, dim, max_iter, f, real_func):
 
 
 if __name__ == '__main__':
-    dim = 1
-    func = lambda x,t:torch.sin(t)*(torch.exp(x*(x-1))-1)
+    dim = 2
+    func = lambda x,t:torch.exp(torch.sin(2*math.pi*t)*((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1))-1
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(3)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
     model = Controller(tree).cuda()
     train(model, dim, 50, f, func)

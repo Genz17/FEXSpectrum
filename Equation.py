@@ -19,7 +19,7 @@ def Partialt(func, x, t, h=1e-3):
 def LaplaceOperator(func, x, h=1e-3):
     x = x.to(torch.float64)
     xNum = x.shape[1]
-    s = torch.zeros_like(x)
+    s = 0
     u1 = func(x)
     for i in range(xNum):
         deltax = torch.zeros_like(x, device='cuda:0')
@@ -34,7 +34,7 @@ def LaplaceOperatorWitht(func, x, t, h=1e-3):
     t = t.to(torch.float64)
     x = x.to(torch.float64)
     xNum = x.shape[1]
-    s = torch.zeros_like(x)
+    s = 0
     u1 = func(x, t)
     for i in range(xNum):
         deltax = torch.zeros_like(x, device='cuda:0')
