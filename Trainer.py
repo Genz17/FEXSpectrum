@@ -10,6 +10,7 @@ from Controller import Controller
 from TreeTrain import TreeTrain
 from OperationBuffer import Buffer
 from Candidate import Candidate
+from funcCoeffList import funcCoeffListGen
 from Coeff import *
 from integration1D import integration1D,integration1DforT
 set_up_backend("torch", data_type="float64")
@@ -32,12 +33,13 @@ def train(model, dim, max_iter, f, real_func):
         errList = torch.zeros(model.batchSize)
         for batch in range(model.batchSize):
             treeDictCompute = treeBuffer[batch]
-            funcList = [lambda x:(sum([Coeff(j,n+1,T,'a',1)*treeDictCompute[str(n)](x) - Coeff(j,n+1,T,'b',1)*LaplaceOperator(lambda \
-                        s:treeDictCompute[str(n)](s),x) for n in range(model.treeNum)]) - integration1DforT(
-                            lambda s,l:f(s,l)*Psi(order, j, T)(l),[0,T],x)) for j in range(1, model.treeNum+1)]
-
-            lossList = [Coeff_r(model.treeNum,i+1)*integration1D(lambda x:(funcList[i](x))**2,[0,1]) for i in range(len(funcList))]
-            loss = sum(lossList) + model.treeNum**(-4)*integration1D(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,[0,1])
+            loss = 0
+            for j in range(1, model.treeNum+3):
+                func = lambda x:(sum([Coeff(j,n,T,'a',1)*treeDictCompute[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
+                            s:treeDictCompute[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
+                                lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
+                loss = loss + Coeff_r(model.treeNum,j)*mc.integrate(lambda x:(func(x))**2,dim,1000,domain)
+            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,1,1000,domain)
             errList[batch] = loss
 
         errinx = torch.argmin(errList)
@@ -66,6 +68,6 @@ if __name__ == '__main__':
     dim = 1
     func = lambda x,t:torch.sin(t)*(torch.exp(x*(x-1))-1)
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(3)}
     model = Controller(tree).cuda()
     train(model, dim, 50, f, func)

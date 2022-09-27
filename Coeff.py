@@ -39,6 +39,7 @@ def Coeff_r(treeNum, j):
 
 
 def Coeff(j, n, T, coeff_type, order=1):
+    #print(j,n)
     if coeff_type == 'a':
         if order == 1:
             if j == 1:
@@ -91,5 +92,3 @@ def Coeff_All(j, n, T, coeff_type, order):
     for i in range(1,n+1):
         res[i-1] = Coeff(j,i,T,coeff_type,order)
     return res
-
-#print(integration1D(lambda x:Diffx(Phi(1,10,1),x)*Psi(1,8,1)(x), [0,1])-Coeff(8,10,1,'a'))
