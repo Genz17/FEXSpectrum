@@ -1,5 +1,4 @@
 import torch
-from integration1D import integration1D, integration1DforT
 from Equation import Diffx
 def Legendre(n):
     if n == 0:

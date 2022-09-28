@@ -5,7 +5,7 @@ import copy
 from torchquad import MonteCarlo, set_up_backend, Trapezoid
 from Equation import LaplaceOperator,Diffx,Partialt
 from Coeff import Coeff,Psi,Coeff_r,Coeff_All,Phi
-from integration1D import integration1DforT,integration1D
+from integration1D import integration1DforT
 from funcCoeffList import funcCoeffListGen
 from outputFunc import outputFunc
 set_up_backend("torch", data_type="float64")
@@ -15,7 +15,8 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
 
     batchSize = model.batchSize
     treeBuffer = []
-    X = torch.rand((100,dim), device='cuda:0').view(100,dim)
+    X = 2*(torch.rand((100,dim), device='cuda:0')-0.5)
+    #X = torch.rand((100,dim), device='cuda:0').view(100,dim)
 
     for batch in range(batchSize):
         for i in range(model.treeNum):
