@@ -44,8 +44,8 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
 
 
-        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=80)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=0.01, last_epoch=-1, verbose=False)
+        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=100)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 25, eta_min=0.01, last_epoch=-1, verbose=False)
 
         def closure():
             optimizer.zero_grad()

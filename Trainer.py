@@ -22,7 +22,7 @@ def train(model, dim, max_iter, f, real_func):
     T = 1
     domain = [[-1,1] for i in range(dim)]
     optimizer4model = torch.optim.Adam(model.NN.parameters())
-    buffer = Buffer(3)
+    buffer = Buffer(5)
     X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
     tTest = torch.linspace(0,1,1000, device='cuda:0')
 
