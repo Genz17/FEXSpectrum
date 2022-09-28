@@ -49,18 +49,18 @@ def BasicTreeGen():
     tree = BinaryTreeNode(False)
     tree.insertLeft(False)
     tree.insertRight(False)
-    tree.leftchild.insertLeft(False)
-    tree.leftchild.insertRight(False)
-    tree.rightchild.insertLeft(False)
-    tree.rightchild.insertRight(False)
-    tree.leftchild.leftchild.insertLeft(True)
-    tree.leftchild.leftchild.insertRight(True)
-    tree.leftchild.rightchild.insertLeft(True)
-    tree.leftchild.rightchild.insertRight(True)
-    tree.rightchild.leftchild.insertLeft(True)
-    tree.rightchild.leftchild.insertRight(True)
-    tree.rightchild.rightchild.insertLeft(True)
-    tree.rightchild.rightchild.insertRight(True)
+    tree.leftchild.insertLeft(True)
+    tree.leftchild.insertRight(True)
+    tree.rightchild.insertLeft(True)
+    tree.rightchild.insertRight(True)
+    #tree.leftchild.leftchild.insertLeft(True)
+    #tree.leftchild.leftchild.insertRight(True)
+    #tree.leftchild.rightchild.insertLeft(True)
+    #tree.leftchild.rightchild.insertRight(True)
+    #tree.rightchild.leftchild.insertLeft(True)
+    #tree.rightchild.leftchild.insertRight(True)
+    #tree.rightchild.rightchild.insertLeft(True)
+    #tree.rightchild.rightchild.insertRight(True)
     NodeNumCompute(tree)
     return tree
 
@@ -143,8 +143,8 @@ class TrainableTree(nn.Module):
         self.operators          = nn.ModuleDict(self.operators)
 
     def forward(self, inputData):
-        a = torch.prod(inputData,1).view(-1,1)
-        b = torch.prod(inputData-torch.ones_like(inputData),1).view(-1,1)
+        a = torch.prod(inputData+torch.ones_like(inputData), 1).view(-1,1)
+        b = torch.prod(inputData-torch.ones_like(inputData), 1).view(-1,1)
         res = ComputeThroughTree(self.tree, self.linearTransform, inputData)
         return a*b*res
 
@@ -155,11 +155,10 @@ class TrainableTree(nn.Module):
     def LinearGen(self):
         for key in self.linearTransform:
             for layer in self.linearTransform[key].modules():
-                nn.init.xavier_normal_(layer.weight)
+                nn.init.ones_(layer.weight)
                 nn.init.zeros_(layer.bias)
                 layer.weight = nn.Parameter(layer.weight.to(torch.float64))
                 layer.bias = nn.Parameter(layer.bias.to(torch.float64))
-                pass
 
     def OperatorsGen(self, tree):
         if tree.leftchild == None and tree.rightchild == None:
