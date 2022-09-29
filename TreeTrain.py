@@ -28,9 +28,9 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
         for _ in range(10):
             optimizer.zero_grad()
             loss = 0
-            for j in range(1, model.treeNum+1):
+            for j in range(1, model.treeNum+3):
                 func = lambda x:(sum([Coeff(j,n,T,'a',1)*model.treeDict[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
-                            s:model.treeDict[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
+                            s:model.treeDict[str(n-1)](s),x) for n in range(1, model.treeNum+1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
                 loss = loss + Coeff_r(model.treeNum,j)*tp.integrate(lambda x:(func(x))**2,dim,800,domain)
             loss = loss + 0.1*model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,800,domain)
@@ -44,13 +44,13 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
 
 
-        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=100)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 25, eta_min=0.01, last_epoch=-1, verbose=False)
+        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=2, max_iter=100)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 15, eta_min=0.05, last_epoch=-1, verbose=False)
 
         def closure():
             optimizer.zero_grad()
             loss = 0
-            for j in range(1, model.treeNum+1):
+            for j in range(1, model.treeNum+3):
                 func = lambda x:(sum([Coeff(j,n,T,'a',1)*model.treeDict[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
                             s:model.treeDict[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
