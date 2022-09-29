@@ -70,6 +70,6 @@ if __name__ == '__main__':
     func = lambda x,t:torch.exp(torch.sin(2*math.pi*t)*(((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1)))-1
     #func = lambda x,t:torch.sin(2*math.pi*t)*(((x+1)*(x-1)).view(-1,1))
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(8)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(10)}
     model = Controller(tree).cuda()
     train(model, dim, 50, f, func)

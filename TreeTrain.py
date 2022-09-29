@@ -32,8 +32,8 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 func = lambda x:(sum([Coeff(j,n,T,'a',1)*model.treeDict[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
                             s:model.treeDict[str(n-1)](s),x) for n in range(1, model.treeNum+1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
-                loss = loss + Coeff_r(model.treeNum,j)*tp.integrate(lambda x:(func(x))**2,dim,800,domain)
-            loss = loss + 0.1*model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,800,domain)
+                loss = loss + Coeff_r(model.treeNum,j)*tp.integrate(lambda x:(func(x))**2,dim,500,domain)
+            loss = loss + 0.1*model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
             print(_,loss)
             loss.backward()
             optimizer.step()
@@ -44,7 +44,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
 
 
-        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=2, max_iter=100)
+        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=100)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 15, eta_min=0.05, last_epoch=-1, verbose=False)
 
         def closure():
@@ -54,8 +54,8 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 func = lambda x:(sum([Coeff(j,n,T,'a',1)*model.treeDict[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
                             s:model.treeDict[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
-                loss = loss + Coeff_r(model.treeNum,j)*tp.integrate(lambda x:(func(x))**2,dim,800,domain)
-            loss = loss + 0.1*model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,800,domain)
+                loss = loss + Coeff_r(model.treeNum,j)*tp.integrate(lambda x:(func(x))**2,dim,500,domain)
+            loss = loss + 0.1*model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
             print(loss)
             loss.backward()
             scheduler.step()
