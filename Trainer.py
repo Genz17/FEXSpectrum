@@ -53,10 +53,11 @@ def train(model, dim, max_iter, f, real_func):
         errList[errList > base] = base
         errList[errList != base] = 1e10
         rewards = 1/(1+torch.sqrt(errList))
+        print('----------------------------------')
         print('rewards: '.format(rewards))
         argSortList = torch.argsort(rewards, descending=True)
         rewardsSorted = rewards[argSortList]
-        lossController = torch.sum(-selectedPorbLogitsSorted[argSortList])
+        lossController = torch.sum(-selectedPorbLogitsSorted[argSortList][:int(model.batchSize*0.5)])
 
         optimizer4model.zero_grad()
         lossController.backward()
@@ -73,6 +74,7 @@ def train(model, dim, max_iter, f, real_func):
                     a = a+torch.norm(z-y, 2)**2
                     b = b+torch.norm(y, 2)**2
                 print('relerr: {}'.format(torch.sqrt(a/b)))
+        print('---------------------------------')
 
 
 

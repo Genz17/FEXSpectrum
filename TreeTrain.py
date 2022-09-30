@@ -25,7 +25,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=1e-1)
 
-        for _ in range(0):
+        for _ in range(10):
             optimizer.zero_grad()
             loss = 0
             for j in range(1, model.treeNum+3):
@@ -45,7 +45,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
 
 
-        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=100)
+        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=20)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 15, eta_min=0.05, last_epoch=-1, verbose=False)
 
         def closure():
@@ -68,7 +68,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 print('relerr: {}'.format(torch.norm(y-z)/torch.norm(y)))
             return loss
 
-        #optimizer.step(closure)
+        optimizer.step(closure)
         treeBuffer.append(copy.deepcopy(model.treeDict))
 
 
