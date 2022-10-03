@@ -10,7 +10,7 @@ class Controller(nn.Module):
         self.tanhC          = 2.5
         self.treeNum        = len(treeDict)
         self.treeDict       = nn.ModuleDict(treeDict)
-        self.batchSize      = 4
+        self.batchSize      = 2
         self.NN             = nn.Sequential(
                                 nn.Linear(20, 60),
                                 nn.ReLU(),
@@ -26,7 +26,7 @@ class Controller(nn.Module):
 
     def sample(self):
         logits = self.probCalc()
-        selectedPorbLogits = [torch.zeros((self.batchSize,0), device='cuda:0') for i in range(self.treeNum)]
+        selectedProbLogits = [torch.zeros((self.batchSize,0), device='cuda:0') for i in range(self.treeNum)]
         inxBuffer = 0
         actions = [torch.zeros((self.batchSize,0), dtype=torch.int, device='cuda:0') for i in range(self.treeNum)]
         for i in range(self.treeNum):
@@ -41,8 +41,8 @@ class Controller(nn.Module):
                 action = prob.multinomial(1)
 
                 actions[i] = torch.cat([actions[i],action],dim=1)
-                selectedPorbLogits[i] = torch.cat([selectedPorbLogits[i], prob.gather(1, action)], dim=1)
-        return actions, sum(selectedPorbLogits)
+                selectedProbLogits[i] = torch.cat([selectedProbLogits[i], prob.gather(1, action)], dim=1)
+        return actions, sum(selectedProbLogits)
     def TotalOP(self):
         t = 0
         for key in self.treeDict.keys():

@@ -1,0 +1,5 @@
+def trueFuncNd(x,d):
+    xNum = x.shape[1]
+    for i in range(xNum):
+        res = res*(x[:,i]**2-1)
+torch.exp(torch.sin(2*math.pi*t)*(((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1)))-1

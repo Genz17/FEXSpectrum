@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+set_up_backend("torch", data_type="float64")
 from Operations import unary_functions, binary_functions, unary_functions_str, binary_functions_str
 from Operations import UnaryOperation, BinaryOperation
 
@@ -145,6 +146,8 @@ class TrainableTree(nn.Module):
     def forward(self, inputData):
         a = torch.prod(inputData+torch.ones_like(inputData), 1).view(-1,1)
         b = torch.prod(inputData-torch.ones_like(inputData), 1).view(-1,1)
+        a = a/torch.norm(a)
+        b = b/torch.norm(b)
         res = ComputeThroughTree(self.tree, self.linearTransform, inputData)
         return a*b*res
 
@@ -155,10 +158,10 @@ class TrainableTree(nn.Module):
     def LinearGen(self):
         for key in self.linearTransform:
             for layer in self.linearTransform[key].modules():
-                nn.init.ones_(layer.weight)
+                nn.init.xavier_normal_(layer.weight)
                 nn.init.zeros_(layer.bias)
-                layer.weight = nn.Parameter(layer.weight.to(torch.float64))
-                layer.bias = nn.Parameter(layer.bias.to(torch.float64))
+                #layer.weight = nn.Parameter(layer.weight.to(torch.float64))
+                #layer.bias = nn.Parameter(layer.bias.to(torch.float64))
 
     def OperatorsGen(self, tree):
         if tree.leftchild == None and tree.rightchild == None:

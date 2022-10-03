@@ -41,8 +41,8 @@ def train(model, dim, max_iter, f, real_func):
                 func = lambda x:(sum([Coeff(j,n,T,'a',1)*treeDictCompute[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
                             s:treeDictCompute[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
-                loss = loss + Coeff_r(model.treeNum,j)*tp.integrate(lambda x:(func(x))**2,dim,1000,domain)
-            loss = loss + 0.1*model.treeNum**(-4)*tp.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
+                loss = loss + Coeff_r(model.treeNum,j)*mc.integrate(lambda x:(func(x))**2,dim,1000,domain)
+            loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
             errList[batch] = loss
         errinx = torch.argmin(errList)
         err = torch.min(errList)
@@ -50,12 +50,11 @@ def train(model, dim, max_iter, f, real_func):
 
         # Now do the Controller updating...
         rewards = 1/(1+torch.sqrt(errList))
-        print('rewards: {}'.format(rewards))
         argSortList = torch.argsort(rewards, descending=True)
         rewardsSorted = rewards[argSortList]
-        lossController = torch.sum(-selectedProbLogits[argSortList][:int(model.batchSize*0.5)]*rewardsSorted[:int(model.batchSize*0.5)])
+        lossController = torch.sum(torch.sum(-selectedProbLogits[argSortList][:int(model.batchSize*0.5)],1)*rewardsSorted[:int(model.batchSize*0.5)])
         print('----------------------------------')
-        print('rewards: {}\n'.format(rewards))
+        print('lossController: {}'.format(lossController))
 
         optimizer4model.zero_grad()
         lossController.backward()
@@ -78,11 +77,11 @@ def train(model, dim, max_iter, f, real_func):
 
 
 if __name__ == '__main__':
-    dim = 2
-    func = lambda x,t:torch.exp(torch.sin(2*math.pi*t)*(((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1)))-1
-    #func = lambda x,t:t*(((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1))
+    dim = 20
+    #func = lambda x,t:torch.exp(torch.sin(2*math.pi*t)*((torch.prod(x**2-1,1)).view(-1,1)))-1
+    func = lambda x,t:t*(((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1))
     #func = lambda x,t:t*(((x+1)*(x-1)).view(-1,1))
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(4)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(6)}
     model = Controller(tree).cuda()
     train(model, dim, 50, f, func)
