@@ -13,6 +13,7 @@ from Candidate import Candidate
 from funcCoeffList import funcCoeffListGen
 from Coeff import *
 from integration1D import integration1DforT
+from funcWithVecT import funcTrans
 set_up_backend("torch", data_type="float64")
 mc = MonteCarlo()
 tp = Trapezoid()
@@ -37,7 +38,7 @@ def train(model, dim, max_iter, f, real_func):
         for batch in range(model.batchSize):
             treeDictCompute = treeBuffer[batch]
             loss = 0
-            for j in range(1, model.treeNum+3):
+            for j in range(1, model.treeNum+1):
                 func = lambda x:(sum([Coeff(j,n,T,'a',1)*treeDictCompute[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
                             s:treeDictCompute[str(n-1)](s),x) for n in funcCoeffListGen(j, model.treeNum,1)]) - integration1DforT(
                                 lambda s,l:f(s,l)*Psi(order, j, T)(l),T,x))
@@ -77,11 +78,12 @@ def train(model, dim, max_iter, f, real_func):
 
 
 if __name__ == '__main__':
-    dim = 20
-    #func = lambda x,t:torch.exp(torch.sin(2*math.pi*t)*((torch.prod(x**2-1,1)).view(-1,1)))-1
-    func = lambda x,t:t*(((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1))
-    #func = lambda x,t:t*(((x+1)*(x-1)).view(-1,1))
+    dim = 2
+    #func = lambda x,t:torch.exp(torch.sin(2*math.pi*t.view(-1,1))*((torch.prod(x**2-1,1)).view(-1,1)))-1
+    funcScalar = lambda x,t:t*(((x[0]**2-1)*(x[1]**2-1)))
+    funcVector = lambda x,t:t*(((x[:,0]**2-1)*(x[:,1]**2-1)).view(-1,1))
+    func = lambda x,t:funcTrans(funcScalar,x,t) #func = lambda x,t:t*(((x+1)*(x-1)).view(-1,1)) 
     f = lambda x,t : RHS4Heat(func,x,t)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(6)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
     model = Controller(tree).cuda()
-    train(model, dim, 50, f, func)
+    train(model, dim, 50, f, funcVector)
