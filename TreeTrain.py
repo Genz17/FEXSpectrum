@@ -21,11 +21,6 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
     print(domainT)
     batchSize = model.batchSize
     treeBuffer = []
-    X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
-    tTest = torch.rand((1000,1), device='cuda:0')
-    XT = torch.zeros((1000,dim+1),device='cuda:0')
-    XT[:,:-1] = X
-    XT[:,-1] = tTest.view(1000)
     #X = torch.rand((100,dim), device='cuda:0').view(100,dim)
 
     for batch in range(batchSize):
@@ -34,7 +29,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             model.treeDict[str(i)].LinearGen()
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=1e-1)
-        for _ in range(30):
+        for _ in range(0):
             optimizer.zero_grad()
             loss = 0
             for j in range(1, model.treeNum+1):
@@ -47,6 +42,11 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             loss.backward()
             optimizer.step()
             with torch.no_grad():
+                X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
+                tTest = torch.rand((1000,1), device='cuda:0')
+                XT = torch.zeros((1000,dim+1),device='cuda:0')
+                XT[:,:-1] = X
+                XT[:,-1] = tTest.view(1000)
                 z = outputFunc(model,X,tTest,order,T).view(X.shape[0],1)
                 y = real_func(XT).view(X.shape[0],1)
                 relerr = torch.norm(y-z)/torch.norm(y)
@@ -70,13 +70,18 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             loss.backward()
             scheduler.step()
             with torch.no_grad():
+                X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
+                tTest = torch.rand((1000,1), device='cuda:0')
+                XT = torch.zeros((1000,dim+1),device='cuda:0')
+                XT[:,:-1] = X
+                XT[:,-1] = tTest.view(1000)
                 z = outputFunc(model,X,tTest,order,T).view(X.shape[0],1)
                 y = real_func(XT).view(X.shape[0],1)
                 relerr = torch.norm(y-z)/torch.norm(y)
                 print('relerr: {}'.format(relerr))
             return loss
 
-        optimizer.step(closure)
+        #optimizer.step(closure)
         treeBuffer.append(copy.deepcopy(model.treeDict))
 
 
