@@ -66,17 +66,22 @@ def train(model, dim, max_iter, f, real_func):
         print('----------------------------------')
         print('lossController: {}'.format(lossController))
 
-        optimizer4model.zero_grad()
-        lossController.backward()
-        optimizer4model.step()
+        try:
+            optimizer4model.zero_grad()
+            lossController.backward()
+            optimizer4model.step()
+        except BaseException:
+            print('loss: {}, Error!'.format(lossController))
         with torch.no_grad():
             for i in range(len(buffer.bufferzone)):
                 print(buffer.bufferzone[i].action, buffer.bufferzone[i].error)
                 z = outputFunc(buffer.bufferzone[i],X,tTest,order,T).view(1000,1)
                 y = real_func(XT).view(1000,1)
-                a = torch.norm(z-y, 2)**2
-                b = torch.norm(y, 2)**2
-                print('relerr: {}'.format(torch.sqrt(a/b)))
+                a = (z-y)**2
+                b = y**2
+                a = torch.sum(a,0)
+                b = torch.sum(b,0)
+                print('relerr: {}'.format(torch.sqrt(a/b).item()))
         print('---------------------------------')
 
 
@@ -84,8 +89,9 @@ def train(model, dim, max_iter, f, real_func):
 
 if __name__ == '__main__':
     dim = 2
-    func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
-    #func = lambda xt:(xt[:,-1].view(-1,1))*(((xt[:,0]**2-1)*(xt[:,1]**2-1)).view(-1,1))
+    #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
+    #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1)*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))))-1
+    func = lambda xt:(xt[:,-1].view(-1,1))*(((xt[:,0]**2-1)*(xt[:,1]**2-1)).view(-1,1))
     f = lambda xt : RHS4Heat(func,xt)
     tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(4)}
     model = Controller(tree).cuda()

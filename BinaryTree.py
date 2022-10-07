@@ -145,8 +145,8 @@ class TrainableTree(nn.Module):
     def forward(self, inputData):
         a = torch.prod(inputData+torch.ones_like(inputData), 1).view(-1,1)
         b = torch.prod(inputData-torch.ones_like(inputData), 1).view(-1,1)
-        #a = a/torch.norm(a)
-        #b = b/torch.norm(b)
+        a = a/(torch.sqrt(0.1+torch.sum(a**2,1)).view(-1,1))
+        b = b/(torch.sqrt(0.1+torch.sum(b**2,1)).view(-1,1))
         res = ComputeThroughTree(self.tree, self.linearTransform, inputData)
         return a*b*res
 
