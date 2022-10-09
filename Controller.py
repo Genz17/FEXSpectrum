@@ -10,11 +10,14 @@ class Controller(nn.Module):
         self.tanhC          = 2.5
         self.treeNum        = len(treeDict)
         self.treeDict       = nn.ModuleDict(treeDict)
-        self.batchSize      = 2
+        self.batchSize      = 4
         self.NN             = nn.Sequential(
                                 nn.Linear(20, 60),
                                 nn.ReLU(),
+                                nn.Linear(60, 60),
+                                nn.ReLU(),
                                 nn.Linear(60,self.TotalOP()))
+        self.randNum        = 0
 
     def probCalc(self):
         inputData = torch.zeros(self.batchSize, 20, requires_grad=True, device= 'cuda:0')

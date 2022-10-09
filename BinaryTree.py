@@ -47,20 +47,40 @@ def OperationPlace(tree, operationInxList, operationDict):
 
 def BasicTreeGen():
     tree = BinaryTreeNode(False)
+
     tree.insertLeft(False)
     tree.insertRight(False)
+
     tree.leftchild.insertLeft(False)
     tree.leftchild.insertRight(False)
     tree.rightchild.insertLeft(False)
     tree.rightchild.insertRight(False)
-    tree.leftchild.leftchild.insertLeft(True)
-    tree.leftchild.leftchild.insertRight(True)
-    tree.leftchild.rightchild.insertLeft(True)
-    tree.leftchild.rightchild.insertRight(True)
-    tree.rightchild.leftchild.insertLeft(True)
-    tree.rightchild.leftchild.insertRight(True)
-    tree.rightchild.rightchild.insertLeft(True)
-    tree.rightchild.rightchild.insertRight(True)
+
+    tree.leftchild.leftchild.insertLeft(False)
+    tree.leftchild.leftchild.insertRight(False)
+    tree.leftchild.rightchild.insertLeft(False)
+    tree.leftchild.rightchild.insertRight(False)
+    tree.rightchild.leftchild.insertLeft(False)
+    tree.rightchild.leftchild.insertRight(False)
+    tree.rightchild.rightchild.insertLeft(False)
+    tree.rightchild.rightchild.insertRight(False)
+
+    tree.leftchild.leftchild.leftchild.insertLeft(True)
+    tree.leftchild.leftchild.leftchild.insertRight(True)
+    tree.leftchild.leftchild.rightchild.insertLeft(True)
+    tree.leftchild.leftchild.rightchild.insertRight(True)
+    tree.leftchild.rightchild.leftchild.insertLeft(True)
+    tree.leftchild.rightchild.leftchild.insertRight(True)
+    tree.leftchild.rightchild.rightchild.insertLeft(True)
+    tree.leftchild.rightchild.rightchild.insertRight(True)
+    tree.rightchild.leftchild.leftchild.insertLeft(True)
+    tree.rightchild.leftchild.leftchild.insertRight(True)
+    tree.rightchild.leftchild.rightchild.insertLeft(True)
+    tree.rightchild.leftchild.rightchild.insertRight(True)
+    tree.rightchild.rightchild.leftchild.insertLeft(True)
+    tree.rightchild.rightchild.leftchild.insertRight(True)
+    tree.rightchild.rightchild.rightchild.insertLeft(True)
+    tree.rightchild.rightchild.rightchild.insertRight(True)
     NodeNumCompute(tree)
     return tree
 
@@ -79,8 +99,8 @@ def ShowTree(tree, cnt, ans=None):
 
 def ComputeThroughTree(treeNode, linearTransform, inputData):
     if treeNode.leftchild == None and treeNode.rightchild == None:
-        ans = treeNode.operation(inputData)
-        ans = linearTransform[str(treeNode.count)](ans)
+        ans = linearTransform[str(treeNode.count)](inputData)
+        ans = treeNode.operation(ans)
 
     if treeNode.leftchild != None and treeNode.rightchild == None:
         ans = treeNode.operation(ComputeThroughTree(treeNode.leftchild,linearTransform,inputData))
@@ -143,12 +163,10 @@ class TrainableTree(nn.Module):
         self.operators          = nn.ModuleDict(self.operators)
 
     def forward(self, inputData):
-        a = torch.prod(inputData+torch.ones_like(inputData), 1).view(-1,1)
-        b = torch.prod(inputData-torch.ones_like(inputData), 1).view(-1,1)
-        a = a/(torch.sqrt(0.1+torch.sum(a**2,1)).view(-1,1))
-        b = b/(torch.sqrt(0.1+torch.sum(b**2,1)).view(-1,1))
+        a = torch.prod(inputData**2-torch.ones_like(inputData), 1).view(-1,1)
+        a = a/(torch.sqrt(1000+torch.sum(a**2,1)).view(-1,1))
         res = ComputeThroughTree(self.tree, self.linearTransform, inputData)
-        return a*b*res
+        return a*res
 
     def PlaceOP(self, operationList):
         OperationPlace(self.tree, operationList, self.operators)
@@ -157,8 +175,8 @@ class TrainableTree(nn.Module):
     def LinearGen(self):
         for key in self.linearTransform:
             for layer in self.linearTransform[key].modules():
-                nn.init.ones_(layer.weight)
-                nn.init.ones_(layer.bias)
+                nn.init.kaiming_uniform_(layer.weight)
+                nn.init.zeros_(layer.bias)
                 layer.weight = nn.Parameter(layer.weight.to(torch.float64))
                 layer.bias = nn.Parameter(layer.bias.to(torch.float64))
 

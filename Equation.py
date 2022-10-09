@@ -1,5 +1,6 @@
 import torch
 import matplotlib.pyplot as plt
+torch.set_default_tensor_type('torch.cuda.DoubleTensor')
 
 def Diffx(func, x, h=1e-4):
     x = x.to(torch.float64)

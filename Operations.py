@@ -6,13 +6,13 @@ class UnaryOperation(nn.Module):
         super(UnaryOperation, self).__init__()
         self.operator = operator
         self.isLeave  = isLeave
-        if not isLeave:
+        if isLeave:
             self.li = nn.Linear(1,1)
-            nn.init.ones_(self.li.weight)
+            nn.init.kaiming_uniform_(self.li.weight)
             nn.init.zeros_(self.li.bias)
 
     def forward(self, inputData):
-        if self.isLeave:
+        if not self.isLeave:
             return self.operator(inputData)
         else:
             return self.li(self.operator(inputData))
@@ -31,14 +31,10 @@ class BinaryOperation(nn.Module):
 unary_functions = [lambda x: 0*x,
                    lambda x: 1+0*x,
                    lambda x: x,
-                   lambda x: x+1,
-                   lambda x: x-1,
-                   lambda x: x**2+1,
-                   lambda x: x**2-1,
-                   lambda x: x**2,
-                   lambda x: x**3,
-                   lambda x: x**4,
-                   torch.exp,
+                   #lambda x: x**2,
+                   #lambda x: x**3,
+                   #lambda x: x**4,
+                   #torch.exp,
                    torch.sin,
                    torch.cos,]
 

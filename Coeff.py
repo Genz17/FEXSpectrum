@@ -34,7 +34,7 @@ def Psi(order, n, T):
 
 
 def Coeff_r(treeNum, j):
-    return max(treeNum**(-3)*sum([k*(2*k-1) for k in range(j, treeNum+1)]), 0.5)
+    return treeNum**(-3)*sum([k*(2*k-1) for k in range(j, treeNum+3)])
 
 
 def Coeff(j, n, T, coeff_type, order=1):
