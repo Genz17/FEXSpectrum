@@ -90,10 +90,10 @@ def train(model, dim, max_iter, f, real_func):
 
 if __name__ == '__main__':
     dim = 2
-    #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
+    func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
     #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1)*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))))-1
-    func = lambda xt:(xt[:,-1].view(-1,1))*(((xt[:,0]**2-1)*(xt[:,1]**2-1)).view(-1,1))
+    #func = lambda xt:(xt[:,-1].view(-1,1))*(((xt[:,0]**2-1)*(xt[:,1]**2-1)).view(-1,1))
     f = lambda xt : RHS4Heat(func,xt)
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(1)}
+    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(8)}
     model = Controller(tree).cuda()
     train(model, dim, 50, f, func)

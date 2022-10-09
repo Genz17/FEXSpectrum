@@ -61,7 +61,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
 
 
         optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=1, max_iter=100)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 80, eta_min=0.01, last_epoch=-1, verbose=False)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 100, eta_min=0.01, last_epoch=-1, verbose=False)
 
         def closure():
             optimizer.zero_grad()
@@ -74,7 +74,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 loss = loss + Coeff_r(model.treeNum,j)*tempLoss
             loss = loss + model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,5000,domain)
 
-            print(loss)
+            print(loss, type(loss))
             loss.backward()
             #scheduler.step()
             with torch.no_grad():
@@ -92,12 +92,37 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             return loss
 
         optimizer.step(closure)
-        if ((not loss < 1) and (not loss >= 1)):
+        with torch.no_grad():
+            X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
+            tTest = torch.rand((1000,1), device='cuda:0')
+            XT = torch.zeros((1000,dim+1),device='cuda:0')
+            XT[:,:-1] = X
+            XT[:,-1] = tTest.view(1000)
+            z = outputFunc(model,X,tTest,order,T).view(X.shape[0],1)
+            y = real_func(XT).view(X.shape[0],1)
+            a = torch.sum((z-y)**2,0).view(1)
+            b = torch.sum(y**2,0).view(1)
+            relerr = torch.sqrt(a/b)
+        if ((not relerr < 1) and (not relerr >= 1)):
             for i in range(model.treeNum):
                 model.treeDict[str(i)].LinearGen()
                 model.treeDict[str(i)].OperationsRefresh()
+            print('Now we are at nan.')
+            with torch.no_grad():
+                X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
+                tTest = torch.rand((1000,1), device='cuda:0')
+                XT = torch.zeros((1000,dim+1),device='cuda:0')
+                XT[:,:-1] = X
+                XT[:,-1] = tTest.view(1000)
+                z = outputFunc(model,X,tTest,order,T).view(X.shape[0],1)
+                y = real_func(XT).view(X.shape[0],1)
+                a = torch.sum((z-y)**2,0).view(1)
+                b = torch.sum(y**2,0).view(1)
+                relerr = torch.sqrt(a/b)
+                print('relerr: {}'.format(relerr))
             treeBuffer.append(copy.deepcopy(model.treeDict))
         else:
+            print("Now this choices are fine.")
             treeBuffer.append(copy.deepcopy(model.treeDict))
 
 
