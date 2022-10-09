@@ -29,6 +29,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
         for i in range(model.treeNum):
             model.treeDict[str(i)].PlaceOP(batchOperations[i][batch])
             model.treeDict[str(i)].LinearGen()
+            model.treeDict[str(i)].OperationsRefresh()
 
         optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=5e-1)
         for _ in range(10):
@@ -94,6 +95,7 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
         if ((not loss < 1) and (not loss >= 1)):
             for i in range(model.treeNum):
                 model.treeDict[str(i)].LinearGen()
+                model.treeDict[str(i)].OperationsRefresh()
             treeBuffer.append(copy.deepcopy(model.treeDict))
         else:
             treeBuffer.append(copy.deepcopy(model.treeDict))

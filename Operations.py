@@ -8,8 +8,6 @@ class UnaryOperation(nn.Module):
         self.isLeave  = isLeave
         if isLeave:
             self.li = nn.Linear(1,1)
-            nn.init.kaiming_uniform_(self.li.weight)
-            nn.init.zeros_(self.li.bias)
 
     def forward(self, inputData):
         if not self.isLeave:

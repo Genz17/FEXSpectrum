@@ -180,6 +180,15 @@ class TrainableTree(nn.Module):
                 layer.weight = nn.Parameter(layer.weight.to(torch.float64))
                 layer.bias = nn.Parameter(layer.bias.to(torch.float64))
 
+    def OperationsRefresh(self):
+        for key in self.operators:
+            if type(self.operators[key]) == type(UnaryOperation(unary_functions[0], True)):
+                nn.init.kaiming_uniform_(self.operators[key].li.weight)
+                nn.init.zeros_(self.operators[key].li.bias)
+                self.operators[key].li.weight = nn.Parameter(self.operators[key].li.weight.to(torch.float64))
+                self.operators[key].li.bias = nn.Parameter(self.operators[key].li.bias.to(torch.float64))
+
+
     def OperatorsGen(self, tree):
         if tree.leftchild == None and tree.rightchild == None:
             for i in range(len(unary_functions)):
