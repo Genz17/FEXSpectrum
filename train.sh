@@ -5,4 +5,4 @@
 #SBATCH --output=out/fexs8.out
 
 source activate DL
-python -u Trainer.py 
+python -u Trainer.py

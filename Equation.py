@@ -2,14 +2,14 @@ import torch
 import matplotlib.pyplot as plt
 torch.set_default_tensor_type('torch.cuda.DoubleTensor')
 
-def Diffx(func, x, h=1e-4):
+def Diffx(func, x, h=5e-5):
     x = x.to(torch.float64)
     u1 = func(x-h)
     u2 = func(x+h)
 
     return (u2-u1)/(2*h)
 
-def Partialt(func, xt, h=1e-4):
+def Partialt(func, xt, h=5e-5):
     xt = xt.to(torch.float64)
     deltat = torch.zeros_like(xt)
     deltat[:,-1] = 1
@@ -26,7 +26,7 @@ def Partialt(func, xt, h=1e-4):
 #
 #    return (u2-u1)/(2*h)
 
-def LaplaceOperator(func, x, h=1e-4):
+def LaplaceOperator(func, x, h=5e-5):
     x = x.to(torch.float64)
     xNum = x.shape[1]
     s = 0
@@ -40,7 +40,7 @@ def LaplaceOperator(func, x, h=1e-4):
     return s
 
 
-def LaplaceOperatorWitht(func, xt, h=1e-4):
+def LaplaceOperatorWitht(func, xt, h=5e-5):
     xt = xt.to(torch.float64)
     xtNum = xt.shape[1]-1
     s = 0

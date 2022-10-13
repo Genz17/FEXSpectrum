@@ -187,6 +187,19 @@ class TrainableTree(nn.Module):
                 nn.init.zeros_(self.operators[key].li.bias)
                 self.operators[key].li.weight = nn.Parameter(self.operators[key].li.weight.to(torch.float64))
                 self.operators[key].li.bias = nn.Parameter(self.operators[key].li.bias.to(torch.float64))
+            else:
+                nn.init.ones_(self.operators[key].li1.weight)
+                nn.init.zeros_(self.operators[key].li1.bias)
+                self.operators[key].li1.weight = nn.Parameter(self.operators[key].li1.weight.to(torch.float64))
+                self.operators[key].li1.bias = nn.Parameter(self.operators[key].li1.bias.to(torch.float64))
+                nn.init.ones_(self.operators[key].li2.weight)
+                nn.init.zeros_(self.operators[key].li2.bias)
+                self.operators[key].li2.weight = nn.Parameter(self.operators[key].li2.weight.to(torch.float64))
+                self.operators[key].li2.bias = nn.Parameter(self.operators[key].li2.bias.to(torch.float64))
+                nn.init.ones_(self.operators[key].li3.weight)
+                nn.init.zeros_(self.operators[key].li3.bias)
+                self.operators[key].li3.weight = nn.Parameter(self.operators[key].li3.weight.to(torch.float64))
+                self.operators[key].li3.bias = nn.Parameter(self.operators[key].li3.bias.to(torch.float64))
 
 
     def OperatorsGen(self, tree):
@@ -209,5 +222,3 @@ class TrainableTree(nn.Module):
                 self.operators.update({str((tree.count, i)):BinaryOperation(binary_functions[i])})
             self.OperatorsGen(tree.leftchild)
             self.OperatorsGen(tree.rightchild)
-
-

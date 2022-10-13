@@ -28,7 +28,7 @@ def train(model, dim, max_iter, f, real_func):
     domain = [[-1,1] for i in range(dim)]
     domainT = copy.deepcopy(domain)
     domainT.append([0,T])
-    optimizer4model = torch.optim.Adam(model.NN.parameters())
+    optimizer4model = torch.optim.Adam(model.NN.parameters(), lr=1e-1)
     buffer = Buffer(5)
     X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
     tTest = torch.rand((1000,1), device='cuda:0')
@@ -50,18 +50,20 @@ def train(model, dim, max_iter, f, real_func):
                 for j in range(1, model.treeNum+1):
                     func = lambda x:sum([Coeff(j,n,T,'a',1)*treeDictCompute[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
                                 s:treeDictCompute[str(n-1)](s),x) for n in range(1, model.treeNum+1)])
-                    tempLoss = tp.integrate(lambda x:((func(x))**2),dim,10000,domain) - \
-                            2*tp.integrate(lambda xt:(func(xt[:,:-1])*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,10000,domainT) +\
-                            tp.integrate(lambda xt:((f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1)))**2,dim+1,10000,domainT)
+                    tempLoss = mc.integrate(lambda x:((func(x))**2),dim,10000,domain) - \
+                            2*mc.integrate(lambda xt:(func(xt[:,:-1])*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,10000,domainT)
                     loss = loss + tempLoss
-                loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
+                #loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
                 errList[batch] = loss
             errinx = torch.argmin(errList)
             err = torch.min(errList)
         buffer.refresh(Candidate(treeBuffer[errinx], [actions[i][errinx].cpu().detach().numpy().tolist() for i in range(len(actions))], err.item()))
 
         # Now do the Controller updating...
-        rewards = 1/(1+torch.sqrt(errList**2))
+        for i in range(model.batchSize):
+            if errList[i].item() >= 0:
+                errList[i] = 0
+        rewards = torch.sqrt(errList**2)
         print('errList:{}'.format(errList))
         print('rewards:{}'.format(rewards))
         argSortList = torch.argsort(rewards, descending=True)
@@ -70,8 +72,6 @@ def train(model, dim, max_iter, f, real_func):
         print('----------------------------------')
         print('lossController: {}'.format(lossController))
 
-        if ((not lossController < 1) and (not lossController >= 1)):
-            lossController = torch.tensor(0.0, device='cuda:0', requires_grad=True)
         optimizer4model.zero_grad()
         lossController.backward()
         optimizer4model.step()
@@ -92,8 +92,9 @@ if __name__ == '__main__':
     dim = 2
     func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
     #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1)*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))))-1
-    #func = lambda xt:(xt[:,-1].view(-1,1))*(((xt[:,0]**2-1)*(xt[:,1]**2-1)).view(-1,1))
+    #func = lambda xt:(xt[:,-1].view(-1,1))*(((xt[:,0]-1)*(xt[:,1]-1)*(xt[:,0])*(xt[:,1])).view(-1,1))
     f = lambda xt : RHS4Heat(func,xt)
+
     tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(8)}
     model = Controller(tree).cuda()
     train(model, dim, 50, f, func)
