@@ -1,16 +1,16 @@
 import torch
 from Equation import Diffx
-from torchquad import MonteCarlo, set_up_backend, Trapezoid
+from torchquad import MonteCarlo, set_up_backend, Boole
+torch.set_default_tensor_type('torch.cuda.DoubleTensor')
 set_up_backend("torch", data_type="float64")
-mc = MonteCarlo()
-tp = Trapezoid()
+integrator = Boole()
+N = 1000
+Vec = torch.ones(N, 1, device='cuda:0')
 
-def integration1DforT(func_x_t, T, x):
-    xNum = x.shape[0]
-    tList = torch.linspace(0,1,1000, device='cuda:0').view(1,-1)
-    nodeMat = torch.zeros(xNum,1,device='cuda:0')
-    for j in range(xNum):
-        func = lambda t:func_x_t(x[j,:].view(1,-1),t)
-        nodeMat[j,:] = tp.integrate(func, 1, 1000, [[0,T]])
+def integration1D(func, upLim):
+    denseMat = torch.zeros((upLim.shape[0], 1000), device='cuda:0')
+    for i in range(1000):
+        denseMat[:, i:i+1] = upLim - 1e-4*(999-i)
+    nodeMat = torch.trapezoid(denseMat).view(-1,1)
     return nodeMat
 
