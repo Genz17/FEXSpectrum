@@ -2,7 +2,7 @@ import torch
 import math
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from torchquad import MonteCarlo, set_up_backend, Trapezoid
+from torchquad import MonteCarlo, set_up_backend, Boole
 import BinaryTree
 from Equation import LaplaceOperator,RHS4Heat
 from Coeff import Coeff
@@ -14,11 +14,11 @@ from funcCoeffList import funcCoeffListGen
 from Coeff import *
 from funcWithVecT import funcTrans
 import copy
-from outputFunc import outputFunc
+from outputFunc import intFunc,outputFunc
 torch.set_default_tensor_type('torch.cuda.DoubleTensor')
 set_up_backend("torch", data_type="float64")
 mc = MonteCarlo()
-tp = Trapezoid()
+bl = Boole()
 
 def train(model, dim, max_iter, f, real_func):
     order = 1
@@ -46,17 +46,15 @@ def train(model, dim, max_iter, f, real_func):
             for batch in range(model.batchSize):
                 treeDictCompute = treeBuffer[batch]
                 loss = 0
-                for j in range(1, model.treeNum+1):
-                    func = lambda x:sum([Coeff(j,n,T,'a',1)*treeDictCompute[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
-                                s:treeDictCompute[str(n-1)](s),x) for n in range(1, model.treeNum+1)])
-                    tempLoss = mc.integrate(lambda x:((func(x))**2),dim,10000,domain) - \
-                            2*mc.integrate(lambda xt:(func(xt[:,:-1])*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,10000,domainT)
-                    loss = loss + tempLoss
-                #loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
+                for j in range(1, model.outNum+1):
+                    tempLoss = bl.integrate(lambda x:((intFunc(treeDictCompute, x, j, T, order))**2),dim,5000,domain) - \
+                            bl.integrate(lambda xt:2*(intFunc(treeDictCompute, xt[:,:-1], j, T, order)*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,5000,domainT)
+                    loss = loss + Coeff_r(model.outNum,j)*tempLoss
+                    #loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
                 errList[batch] = loss
             errinx = torch.argmin(errList)
             err = torch.min(errList)
-        buffer.refresh(Candidate(treeBuffer[errinx], [actions[i][errinx].cpu().detach().numpy().tolist() for i in range(len(actions))], err.item()))
+        buffer.refresh(Candidate(treeBuffer[errinx], actions[errinx].cpu().detach().numpy().tolist(), err.item()))
 
         # Now do the Controller updating...
         for i in range(model.batchSize):
@@ -88,12 +86,13 @@ def train(model, dim, max_iter, f, real_func):
 
 
 if __name__ == '__main__':
-    dim = 20
-    #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
+    dim = 1
+    outNum = 8
+    func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
     #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1)*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))))-1
-    func = lambda xt:(xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))
+    #func = lambda xt:torch.sin(torch.cos(torch.sin(xt[:,-1].view(-1,1))))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))
     f = lambda xt : RHS4Heat(func,xt)
 
-    tree = {str(i):BinaryTree.TrainableTree(dim).cuda() for i in range(4)}
-    model = Controller(tree).cuda()
+    tree = BinaryTree.TrainableTree(dim, outNum).cuda()
+    model = Controller(tree, outNum).cuda()
     train(model, dim, 50, f, func)

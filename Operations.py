@@ -9,22 +9,22 @@ mc = MonteCarlo()
 bl = Boole()
 
 class UnaryOperation(nn.Module):
-    def __init__(self, operator, isLeave):
+    def __init__(self, operator, isLeave, outNum):
         super(UnaryOperation, self).__init__()
         self.operator = operator
         self.isLeave  = isLeave
-        self.li = nn.Linear(1,1)
+        self.li = nn.Linear(outNum,outNum)
 
     def forward(self, inputData):
         res = self.li(self.operator(inputData))
         return res
 class BinaryOperation(nn.Module):
-    def __init__(self, operator):
+    def __init__(self, operator, outNum):
         super(BinaryOperation, self).__init__()
         self.operator = operator
-        self.li1 = nn.Linear(1,1)
-        self.li2 = nn.Linear(1,1)
-        self.li3 = nn.Linear(1,1)
+        self.li1 = nn.Linear(outNum,outNum)
+        self.li2 = nn.Linear(outNum,outNum)
+        self.li3 = nn.Linear(outNum,outNum)
 
     def forward(self, x, y):
         res = self.li3(self.operator(self.li1(x), self.li2(y)))
@@ -33,17 +33,18 @@ class BinaryOperation(nn.Module):
 
 
 unary_functions = [
-    lambda x: 0*x+1,
+    # lambda x: 0*x+1,
     lambda x: x,
     lambda x: x**2,
-    # lambda x: x**3,
-    # lambda x: x**4,
+    lambda x: x**3,
+    lambda x: x**4,
+    lambda x: x**5,
     torch.sin,
     torch.cos,
     torch.exp,
-    # lambda x: torch.sin(2*x),
-    # lambda x: torch.cos(2*x),
-    # lambda x: torch.exp(2*x),
+    lambda x: torch.sin(2*x),
+    lambda x: torch.cos(2*x),
+    lambda x: torch.exp(2*x),
     # lambda y: integration1D(lambda x:torch.exp((x**2-1).view(-1,1))-1,y)
                    ]
 
@@ -55,7 +56,7 @@ binary_functions = [
     lambda x,y: x*y,
     lambda x,y: -x*y,
     lambda x,y: x-y,
-    lambda x,y: -x+y
+    lambda x,y: -x+y,
                     ]
 
 

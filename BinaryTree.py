@@ -48,27 +48,27 @@ def OperationPlace(tree, operationInxList, operationDict):
 def BasicTreeGen():
     tree = BinaryTreeNode(False)
 
-    tree.insertLeft(False)
-    tree.insertRight(False)
+    tree.insertLeft(True)
+    tree.insertRight(True)
 
-    tree.leftchild.insertLeft(True)
-    tree.leftchild.insertRight(True)
-    tree.rightchild.insertLeft(True)
-    tree.rightchild.insertRight(True)
+    tree.leftchild.insertLeft(False)
+    # tree.leftchild.insertRight(True)
+    # tree.rightchild.insertLeft(True)
+    tree.rightchild.insertRight(False)
 
-    # tree.leftchild.leftchild.insertLeft(False)
-    # tree.leftchild.leftchild.insertRight(False)
+    tree.leftchild.leftchild.insertLeft(True)
+    tree.leftchild.leftchild.insertRight(True)
     # tree.leftchild.rightchild.insertLeft(False)
     # tree.leftchild.rightchild.insertRight(False)
     # tree.rightchild.leftchild.insertLeft(False)
     # tree.rightchild.leftchild.insertRight(False)
-    # tree.rightchild.rightchild.insertLeft(False)
-    # tree.rightchild.rightchild.insertRight(False)
+    tree.rightchild.rightchild.insertLeft(True)
+    tree.rightchild.rightchild.insertRight(True)
 
-    # tree.leftchild.leftchild.leftchild.insertLeft(True)
+    tree.leftchild.leftchild.leftchild.insertLeft(True)
     # tree.leftchild.leftchild.leftchild.insertRight(True)
     # tree.leftchild.leftchild.rightchild.insertLeft(True)
-    # tree.leftchild.leftchild.rightchild.insertRight(True)
+    tree.leftchild.leftchild.rightchild.insertRight(True)
     # tree.leftchild.rightchild.leftchild.insertLeft(True)
     # tree.leftchild.rightchild.leftchild.insertRight(True)
     # tree.leftchild.rightchild.rightchild.insertLeft(True)
@@ -77,10 +77,10 @@ def BasicTreeGen():
     # tree.rightchild.leftchild.leftchild.insertRight(True)
     # tree.rightchild.leftchild.rightchild.insertLeft(True)
     # tree.rightchild.leftchild.rightchild.insertRight(True)
-    # tree.rightchild.rightchild.leftchild.insertLeft(True)
+    tree.rightchild.rightchild.leftchild.insertLeft(True)
     # tree.rightchild.rightchild.leftchild.insertRight(True)
     # tree.rightchild.rightchild.rightchild.insertLeft(True)
-    # tree.rightchild.rightchild.rightchild.insertRight(True)
+    tree.rightchild.rightchild.rightchild.insertRight(True)
     NodeNumCompute(tree)
     return tree
 
@@ -152,12 +152,13 @@ def LeaveNumCompute(tree):
     return leaveList
 
 class TrainableTree(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim, outNum):
         super(TrainableTree, self).__init__()
         self.dim                = dim
         self.tree               = BasicTreeGen()
+        self.outNum             = outNum
         self.operators          = {}
-        self.linearTransform    = {str(i):nn.Linear(dim, 1) for i in LeaveNumCompute(self.tree)}
+        self.linearTransform    = {str(i):nn.Linear(dim, outNum) for i in LeaveNumCompute(self.tree)}
         self.linearTransform    = nn.ModuleDict(self.linearTransform)
         self.OperatorsGen(self.tree)
         self.operators          = nn.ModuleDict(self.operators)
@@ -178,14 +179,14 @@ class TrainableTree(nn.Module):
                 for layer in self.linearTransform[key].modules():
                     nn.init.kaiming_uniform_(layer.weight)
                     nn.init.zeros_(layer.bias)
-                    layer.weight = nn.Parameter(layer.weight.to(torch.float64))
+                    layer.weight = nn.Parameter(layer.weight.to(torch.float64)/torch.norm(layer.weight))
                     layer.bias = nn.Parameter(layer.bias.to(torch.float64))
             else:
                 self.linearTransform.pop(key)
 
     def OperationsRefresh(self):
         for key in self.operators:
-            if type(self.operators[key]) == type(UnaryOperation(unary_functions[0], True)):
+            if type(self.operators[key]) == type(UnaryOperation(unary_functions[0], True, 1)):
                 nn.init.kaiming_uniform_(self.operators[key].li.weight)
                 nn.init.zeros_(self.operators[key].li.bias)
                 self.operators[key].li.weight = nn.Parameter(self.operators[key].li.weight.to(torch.float64))
@@ -208,20 +209,20 @@ class TrainableTree(nn.Module):
     def OperatorsGen(self, tree):
         if tree.leftchild == None and tree.rightchild == None:
             for i in range(len(unary_functions)):
-                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True)})
+                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True, self.outNum)})
 
         if tree.leftchild != None and tree.rightchild == None:
             for i in range(len(unary_functions)):
-                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True)})
+                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True, self.outNum)})
             self.OperatorsGen(tree.leftchild)
 
         if tree.leftchild == None and tree.rightchild != None:
             for i in range(len(unary_functions)):
-                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True)})
+                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True, self.outNum)})
             self.OperatorsGen(tree.rightchild)
 
         if tree.leftchild != None and tree.rightchild != None:
             for i in range(len(binary_functions)):
-                self.operators.update({str((tree.count, i)):BinaryOperation(binary_functions[i])})
+                self.operators.update({str((tree.count, i)):BinaryOperation(binary_functions[i], self.outNum)})
             self.OperatorsGen(tree.leftchild)
             self.OperatorsGen(tree.rightchild)

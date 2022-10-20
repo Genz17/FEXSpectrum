@@ -1,5 +1,5 @@
 class Candidate(object):
-    def __init__(self, treeDict, action, error):
-        self.treeDict   = treeDict
+    def __init__(self, tree, action, error):
+        self.tree   = tree
         self.action     = action
         self.error      = error

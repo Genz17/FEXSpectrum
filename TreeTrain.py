@@ -7,7 +7,7 @@ from torchquad import MonteCarlo, set_up_backend, Boole
 from Equation import LaplaceOperator,LaplaceOperatorWitht,Diffx,Partialt
 from Coeff import Coeff,Psi,Coeff_r,Coeff_All,Phi
 from funcCoeffList import funcCoeffListGen
-from outputFunc import outputFunc
+from outputFunc import intFunc,outputFunc
 import random
 torch.set_default_tensor_type('torch.cuda.DoubleTensor')
 set_up_backend("torch", data_type="float64")
@@ -25,22 +25,19 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
     #X = torch.rand((100,dim), device='cuda:0').view(100,dim)
 
     for batch in range(batchSize):
-        for i in range(model.treeNum):
-            model.treeDict[str(i)].PlaceOP(batchOperations[i][batch])
-            model.treeDict[str(i)].LinearGen()
-            model.treeDict[str(i)].OperationsRefresh()
+        model.tree.PlaceOP(batchOperations[batch])
+        model.tree.LinearGen()
+        model.tree.OperationsRefresh()
 
-        optimizer = torch.optim.Adam(model.treeDict.parameters(), lr=5e-3)
+        optimizer = torch.optim.Adam(model.tree.parameters(), lr=5e-3)
         for _ in range(10):
             optimizer.zero_grad()
             loss = 0
-            for j in range(1, model.treeNum+1):
-                func = lambda x:sum([Coeff(j,n,T,'a',1)*model.treeDict[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
-                            s:model.treeDict[str(n-1)](s),x) for n in range(1, model.treeNum+1)])
-                tempLoss = mc.integrate(lambda x:((func(x))**2),dim,5000,domain) - \
-                        mc.integrate(lambda xt:2*(func(xt[:,:-1])*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,5000,domainT)
-                loss = loss + Coeff_r(model.treeNum,j)*tempLoss
-            #loss = loss + model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,5000,domain)
+            for j in range(1, model.outNum+1):
+                tempLoss = bl.integrate(lambda x:((intFunc(model.tree, x, j, T, order))**2),dim,5000,domain) - \
+                        bl.integrate(lambda xt:2*(intFunc(model.tree, xt[:,:-1], j, T, order)*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,5000,domainT)
+                loss = loss + Coeff_r(model.outNum,j)*tempLoss
+            #loss = loss + model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.tree[str(model.treeNum-1)](s),x))**2,dim,5000,domain)
 
             print(_,loss)
             loss.backward()
@@ -59,19 +56,17 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 print('relerr: {}'.format(relerr))
 
 
-        optimizer = torch.optim.LBFGS(model.treeDict.parameters(), lr=0.5, max_iter=50)
+        optimizer = torch.optim.LBFGS(model.tree.parameters(), lr=0.5, max_iter=80)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 400, eta_min=0.01, last_epoch=-1, verbose=False)
 
         def closure():
             optimizer.zero_grad()
             loss = 0
-            for j in range(1, model.treeNum+1):
-                func = lambda x:sum([Coeff(j,n,T,'a',1)*model.treeDict[str(n-1)](x) - Coeff(j,n,T,'b',1)*LaplaceOperator(lambda \
-                            s:model.treeDict[str(n-1)](s),x) for n in range(1, model.treeNum+1)])
-                tempLoss = mc.integrate(lambda x:((func(x))**2),dim,5000,domain) - \
-                        mc.integrate(lambda xt:2*(func(xt[:,:-1])*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,5000,domainT)
-                loss = loss + Coeff_r(model.treeNum,j)*tempLoss
-            #loss = loss + model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.treeDict[str(model.treeNum-1)](s),x))**2,dim,5000,domain)
+            for j in range(1, model.outNum+1):
+                tempLoss = bl.integrate(lambda x:((intFunc(model.tree, x, j, T, order))**2),dim,5000,domain) - \
+                        bl.integrate(lambda xt:2*(intFunc(model.tree, xt[:,:-1], j, T, order)*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,5000,domainT)
+                loss = loss + Coeff_r(model.outNum,j)*tempLoss
+            #loss = loss + model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:model.tree[str(model.treeNum-1)](s),x))**2,dim,5000,domain)
 
             print(loss, type(loss))
             loss.backward()
@@ -103,9 +98,8 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
             b = torch.sum(y**2,0).view(1)
             relerr = torch.sqrt(a/b)
         if ((not relerr < 1) and (not relerr >= 1)) or relerr > 1e3:
-            for i in range(model.treeNum):
-                model.treeDict[str(i)].LinearGen()
-                model.treeDict[str(i)].OperationsRefresh()
+            model.tree.LinearGen()
+            model.tree.OperationsRefresh()
             print('Now we are at nan.')
             with torch.no_grad():
                 X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
@@ -119,10 +113,10 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 b = torch.sum(y**2,0).view(1)
                 relerr = torch.sqrt(a/b)
                 print('relerr: {}'.format(relerr))
-            treeBuffer.append(copy.deepcopy(model.treeDict))
+            treeBuffer.append(copy.deepcopy(model.tree))
         else:
             print("Now this choices are fine.")
-            treeBuffer.append(copy.deepcopy(model.treeDict))
+            treeBuffer.append(copy.deepcopy(model.tree))
 
 
     return treeBuffer
