@@ -22,15 +22,14 @@ bl = Boole()
 
 def train(model, dim, max_iter, f, real_func):
     order = 1
-    T = 1
-    base = 1e-2
+    T = 1.0
     domain = [[-1,1] for i in range(dim)]
     domainT = copy.deepcopy(domain)
     domainT.append([0,T])
     optimizer4model = torch.optim.Adam(model.NN.parameters(), lr=1e-1)
     buffer = Buffer(5)
     X = 2*(torch.rand((1000,dim), device='cuda:0')-0.5)
-    tTest = torch.rand((1000,1), device='cuda:0')
+    tTest = torch.rand((1000,1), device='cuda:0')*T
     XT = torch.zeros((1000,dim+1),device='cuda:0')
     XT[:,:-1] = X
     XT[:,-1] = tTest.view(1000)
@@ -39,6 +38,7 @@ def train(model, dim, max_iter, f, real_func):
         print('-----------step:{}---------------'.format(step))
 
         actions, selectedProbLogits = model.sample()
+        print(selectedProbLogits)
         treeBuffer = TreeTrain(f, model, actions, domain, T, dim, 1, real_func)
 
         errList = torch.zeros(model.batchSize)
@@ -47,8 +47,8 @@ def train(model, dim, max_iter, f, real_func):
                 treeDictCompute = treeBuffer[batch]
                 loss = 0
                 for j in range(1, model.outNum+1):
-                    tempLoss = bl.integrate(lambda x:((intFunc(treeDictCompute, x, j, T, order))**2),dim,5000,domain) - \
-                            bl.integrate(lambda xt:2*(intFunc(treeDictCompute, xt[:,:-1], j, T, order)*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,5000,domainT)
+                    tempLoss = mc.integrate(lambda x:((intFunc(treeDictCompute, x, j, T, order))**2),dim,10000,domain,seed=1) - \
+                            mc.integrate(lambda xt:2*(intFunc(treeDictCompute, xt[:,:-1], j, T, order)*(f(xt)*(Psi(order,j,T)(xt[:,-1])).view(-1,1))),dim+1,10000,domainT,seed=1)
                     loss = loss + Coeff_r(model.outNum,j)*tempLoss
                     #loss = loss + 0.1*model.treeNum**(-4)*mc.integrate(lambda x:(LaplaceOperator(lambda s:treeDictCompute[str(model.treeNum-1)](s),x))**2,dim,1000,domain)
                 errList[batch] = loss
@@ -60,8 +60,7 @@ def train(model, dim, max_iter, f, real_func):
         for i in range(model.batchSize):
             if errList[i].item() >= 0:
                 errList[i] = 0
-        rewards = torch.sqrt(errList**2)
-        print('errList:{}'.format(errList))
+        rewards = nn.functional.softmax(torch.abs(errList))
         print('rewards:{}'.format(rewards))
         argSortList = torch.argsort(rewards, descending=True)
         rewardsSorted = rewards[argSortList]
@@ -86,13 +85,15 @@ def train(model, dim, max_iter, f, real_func):
 
 
 if __name__ == '__main__':
-    dim = 1
-    outNum = 8
+    dim = 2
+    outNum = 16
     func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
-    #func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1)*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))))-1
-    #func = lambda xt:torch.sin(torch.cos(torch.sin(xt[:,-1].view(-1,1))))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))
+    print('We are using func exp(sin(2\\pi t)\\Prod(x_i^2-1).')
+    # func = lambda xt:torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))
+    # func = lambda xt:(xt[:,-1].view(-1,1))*(torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)
     f = lambda xt : RHS4Heat(func,xt)
+    # f = lambda xt:(torch.prod(xt[:,:-1]**2-1,1)).view(-1,1) - 2*((xt[:,-1])*((xt[:,0]**2-1)+(xt[:,1]**2-1))).view(-1,1)
 
     tree = BinaryTree.TrainableTree(dim, outNum).cuda()
     model = Controller(tree, outNum).cuda()
-    train(model, dim, 50, f, func)
+    train(model, dim, 500, f, func)

@@ -27,48 +27,56 @@ class BinaryTreeNode(object):
             pass
 
 
-def OperationPlace(tree, operationInxList, operationDict):
-    if tree.leftchild == None and tree.rightchild == None:
-        tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
+def OperationPlace(tree, operationInxList):
+    for i in range(1, tree.count+1):
+        ShowTree(tree, i).operation = str((i, operationInxList[i-1].item()))
+        if ShowTree(tree,i).is_unary:
+            print(ShowTree(tree,i).is_unary)
+            print(str(i)+'th node\'s operation is ',unary_functions_str[operationInxList[i-1].item()],'\n')
+        else:
+            print(ShowTree(tree,i).is_unary)
+            print(str(i)+'th node\'s operation is ',binary_functions_str[operationInxList[i-1].item()], '\n')
+    # if tree.leftchild == None and tree.rightchild == None:
+    #     tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
 
-    if tree.leftchild != None and tree.rightchild == None:
-        tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
-        OperationPlace(tree.leftchild, operationInxList, operationDict)
+    # if tree.leftchild != None and tree.rightchild == None:
+    #     tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
+    #     OperationPlace(tree.leftchild, operationInxList, operationDict)
 
-    if tree.leftchild == None and tree.rightchild != None:
-        tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
-        OperationPlace(tree.rightchild, operationInxList, operationDict)
+    # if tree.leftchild == None and tree.rightchild != None:
+    #     tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
+    #     OperationPlace(tree.rightchild, operationInxList, operationDict)
 
-    if tree.leftchild != None and tree.rightchild != None:
-        tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
-        OperationPlace(tree.leftchild, operationInxList, operationDict)
-        OperationPlace(tree.rightchild, operationInxList, operationDict)
+    # if tree.leftchild != None and tree.rightchild != None:
+    #     tree.operation = operationDict[str((tree.count, operationInxList[tree.count-1].item()))]
+    #     OperationPlace(tree.leftchild, operationInxList, operationDict)
+    #     OperationPlace(tree.rightchild, operationInxList, operationDict)
 
 
 def BasicTreeGen():
     tree = BinaryTreeNode(False)
 
-    tree.insertLeft(True)
-    tree.insertRight(True)
+    tree.insertLeft(False)
+    tree.insertRight(False)
 
     tree.leftchild.insertLeft(False)
-    # tree.leftchild.insertRight(True)
-    # tree.rightchild.insertLeft(True)
+    tree.leftchild.insertRight(False)
+    tree.rightchild.insertLeft(False)
     tree.rightchild.insertRight(False)
 
     tree.leftchild.leftchild.insertLeft(True)
     tree.leftchild.leftchild.insertRight(True)
-    # tree.leftchild.rightchild.insertLeft(False)
-    # tree.leftchild.rightchild.insertRight(False)
-    # tree.rightchild.leftchild.insertLeft(False)
-    # tree.rightchild.leftchild.insertRight(False)
+    tree.leftchild.rightchild.insertLeft(True)
+    tree.leftchild.rightchild.insertRight(True)
+    tree.rightchild.leftchild.insertLeft(True)
+    tree.rightchild.leftchild.insertRight(True)
     tree.rightchild.rightchild.insertLeft(True)
     tree.rightchild.rightchild.insertRight(True)
 
-    tree.leftchild.leftchild.leftchild.insertLeft(True)
+    # tree.leftchild.leftchild.leftchild.insertLeft(True)
     # tree.leftchild.leftchild.leftchild.insertRight(True)
     # tree.leftchild.leftchild.rightchild.insertLeft(True)
-    tree.leftchild.leftchild.rightchild.insertRight(True)
+    # tree.leftchild.leftchild.rightchild.insertRight(True)
     # tree.leftchild.rightchild.leftchild.insertLeft(True)
     # tree.leftchild.rightchild.leftchild.insertRight(True)
     # tree.leftchild.rightchild.rightchild.insertLeft(True)
@@ -77,10 +85,10 @@ def BasicTreeGen():
     # tree.rightchild.leftchild.leftchild.insertRight(True)
     # tree.rightchild.leftchild.rightchild.insertLeft(True)
     # tree.rightchild.leftchild.rightchild.insertRight(True)
-    tree.rightchild.rightchild.leftchild.insertLeft(True)
+    # tree.rightchild.rightchild.leftchild.insertLeft(True)
     # tree.rightchild.rightchild.leftchild.insertRight(True)
     # tree.rightchild.rightchild.rightchild.insertLeft(True)
-    tree.rightchild.rightchild.rightchild.insertRight(True)
+    # tree.rightchild.rightchild.rightchild.insertRight(True)
     NodeNumCompute(tree)
     return tree
 
@@ -97,19 +105,18 @@ def ShowTree(tree, cnt, ans=None):
     if ans != None:
         return ans
 
-def ComputeThroughTree(treeNode, linearTransform, inputData):
+def ComputeThroughTree(treeNode, inputData, operators):
     if treeNode.leftchild == None and treeNode.rightchild == None:
-        ans = linearTransform[str(treeNode.count)](inputData)
-        ans = treeNode.operation(ans)
+        ans = operators[treeNode.operation](inputData)
 
     if treeNode.leftchild != None and treeNode.rightchild == None:
-        ans = treeNode.operation(ComputeThroughTree(treeNode.leftchild,linearTransform,inputData))
+        ans = operators[treeNode.operation](ComputeThroughTree(treeNode.leftchild,inputData,operators))
 
     if treeNode.leftchild == None and treeNode.rightchild != None:
-        ans = treeNode.operation(ComputeThroughTree(treeNode.rightchild,linearTransform,inputData))
+        ans = operators[treeNode.operation](ComputeThroughTree(treeNode.rightchild,inputData,operators))
 
     if treeNode.leftchild != None and treeNode.rightchild != None:
-        ans = treeNode.operation(ComputeThroughTree(treeNode.leftchild,linearTransform,inputData),ComputeThroughTree(treeNode.rightchild,linearTransform,inputData))
+        ans = operators[treeNode.operation](ComputeThroughTree(treeNode.leftchild,inputData,operators),ComputeThroughTree(treeNode.rightchild,inputData,operators))
     return ans
 
 def NodeNumCompute(tree, num=0):
@@ -156,73 +163,77 @@ class TrainableTree(nn.Module):
         super(TrainableTree, self).__init__()
         self.dim                = dim
         self.tree               = BasicTreeGen()
+        self.medNum             = 4
         self.outNum             = outNum
-        self.operators          = {}
-        self.linearTransform    = {str(i):nn.Linear(dim, outNum) for i in LeaveNumCompute(self.tree)}
-        self.linearTransform    = nn.ModuleDict(self.linearTransform)
-        self.OperatorsGen(self.tree)
-        self.operators          = nn.ModuleDict(self.operators)
+        # self.linearTransform    = {str(i): nn.Linear(dim, outNum) for i in LeaveNumCompute(self.tree)}
+        # self.linearTransform    = nn.ModuleDict(self.linearTransform)
+        self.linearTransform    = nn.Linear(dim, self.medNum)
+        # self.OperatorsGen(self.tree)
 
     def forward(self, inputData):
         a = torch.prod(inputData**2-torch.ones_like(inputData), 1).view(-1,1)
         a = a/(torch.sqrt(1000+torch.sum(a**2,1)).view(-1,1))
-        res = ComputeThroughTree(self.tree, self.linearTransform, inputData)
+        dataTransformed = self.linearTransform(inputData)
+        res = ComputeThroughTree(self.tree, dataTransformed, self.operators)
         return a*res
 
     def PlaceOP(self, operationList):
-        OperationPlace(self.tree, operationList, self.operators)
-        self.operationList = operationList
+        OperationPlace(self.tree, operationList)
 
     def LinearGen(self):
-        for key in self.linearTransform:
-            if ShowTree(self.tree, int(key)).isLeave:
-                for layer in self.linearTransform[key].modules():
-                    nn.init.kaiming_uniform_(layer.weight)
-                    nn.init.zeros_(layer.bias)
-                    layer.weight = nn.Parameter(layer.weight.to(torch.float64)/torch.norm(layer.weight))
-                    layer.bias = nn.Parameter(layer.bias.to(torch.float64))
-            else:
-                self.linearTransform.pop(key)
+        # for key in self.linearTransform:
+        #     if ShowTree(self.tree, int(key)).isLeave:
+        #         for layer in self.linearTransform[key].modules():
+        #             if type(layer) == type(nn.Linear(1,1)):
+        #                 nn.init.kaiming_uniform_(layer.weight)
+        #                 nn.init.zeros_(layer.bias)
+        #                 layer.weight = nn.Parameter(layer.weight.to(torch.float64)/torch.norm(layer.weight))
+        #                 layer.bias = nn.Parameter(layer.bias.to(torch.float64))
+        #     else:
+        #         self.linearTransform.pop(key)
+        for layer in self.linearTransform.modules():
+            nn.init.kaiming_uniform_(layer.weight)
+            nn.init.zeros_(layer.bias)
+            layer.weight = nn.Parameter(layer.weight.to(torch.float64)/torch.norm(layer.weight))
+            layer.bias = nn.Parameter(layer.bias.to(torch.float64))
 
     def OperationsRefresh(self):
         for key in self.operators:
-            if type(self.operators[key]) == type(UnaryOperation(unary_functions[0], True, 1)):
+            if type(self.operators[key]) == type(UnaryOperation(unary_functions[0], 1,1)):
                 nn.init.kaiming_uniform_(self.operators[key].li.weight)
                 nn.init.zeros_(self.operators[key].li.bias)
-                self.operators[key].li.weight = nn.Parameter(self.operators[key].li.weight.to(torch.float64))
+                self.operators[key].li.weight = nn.Parameter(self.operators[key].li.weight.to(torch.float64)/torch.norm(self.operators[key].li.weight))
                 self.operators[key].li.bias = nn.Parameter(self.operators[key].li.bias.to(torch.float64))
             else:
                 nn.init.kaiming_uniform_(self.operators[key].li1.weight)
                 nn.init.zeros_(self.operators[key].li1.bias)
-                self.operators[key].li1.weight = nn.Parameter(self.operators[key].li1.weight.to(torch.float64))
+                self.operators[key].li1.weight = nn.Parameter(self.operators[key].li1.weight.to(torch.float64)/torch.norm(self.operators[key].li1.weight))
                 self.operators[key].li1.bias = nn.Parameter(self.operators[key].li1.bias.to(torch.float64))
-                nn.init.kaiming_uniform_(self.operators[key].li2.weight)
-                nn.init.zeros_(self.operators[key].li2.bias)
-                self.operators[key].li2.weight = nn.Parameter(self.operators[key].li2.weight.to(torch.float64))
-                self.operators[key].li2.bias = nn.Parameter(self.operators[key].li2.bias.to(torch.float64))
-                nn.init.kaiming_uniform_(self.operators[key].li3.weight)
-                nn.init.zeros_(self.operators[key].li3.bias)
-                self.operators[key].li3.weight = nn.Parameter(self.operators[key].li3.weight.to(torch.float64))
-                self.operators[key].li3.bias = nn.Parameter(self.operators[key].li3.bias.to(torch.float64))
+                # nn.init.kaiming_uniform_(self.operators[key].li2.weight)
+                # nn.init.zeros_(self.operators[key].li2.bias)
+                # self.operators[key].li2.weight = nn.Parameter(self.operators[key].li2.weight.to(torch.float64)/100)
+                # self.operators[key].li2.bias = nn.Parameter(self.operators[key].li2.bias.to(torch.float64)/100)
+                # nn.init.kaiming_uniform_(self.operators[key].li3.weight)
+                # nn.init.zeros_(self.operators[key].li3.bias)
+                # self.operators[key].li3.weight = nn.Parameter(self.operators[key].li3.weight.to(torch.float64)/100)
+                # self.operators[key].li3.bias = nn.Parameter(self.operators[key].li3.bias.to(torch.float64)/100)
 
 
-    def OperatorsGen(self, tree):
-        if tree.leftchild == None and tree.rightchild == None:
-            for i in range(len(unary_functions)):
-                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True, self.outNum)})
-
-        if tree.leftchild != None and tree.rightchild == None:
-            for i in range(len(unary_functions)):
-                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True, self.outNum)})
-            self.OperatorsGen(tree.leftchild)
-
-        if tree.leftchild == None and tree.rightchild != None:
-            for i in range(len(unary_functions)):
-                self.operators.update({str((tree.count, i)):UnaryOperation(unary_functions[i], True, self.outNum)})
-            self.OperatorsGen(tree.rightchild)
-
-        if tree.leftchild != None and tree.rightchild != None:
-            for i in range(len(binary_functions)):
-                self.operators.update({str((tree.count, i)):BinaryOperation(binary_functions[i], self.outNum)})
-            self.OperatorsGen(tree.leftchild)
-            self.OperatorsGen(tree.rightchild)
+    def OperatorsGen(self, tree, opList=None):
+        self.operators = nn.ModuleDict({})
+        if opList == None:
+            opList = [0 for i in range(tree.count)]
+        for ii in range(1, tree.count+1):
+            i = opList[ii-1].item()
+            print(str((ShowTree(tree,ii).count, i)))
+            if ShowTree(tree, ii).is_unary:
+                if ii == tree.count:
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):UnaryOperation(unary_functions[i], self.medNum, self.outNum)})
+                else:
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):UnaryOperation(unary_functions[i], self.medNum, self.medNum)})
+            else:
+                if ii == tree.count:
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):BinaryOperation(binary_functions[i], self.medNum, self.outNum)})
+                else:
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):BinaryOperation(binary_functions[i], self.medNum, self.medNum)})
+        self.operators = nn.ModuleDict(self.operators)
