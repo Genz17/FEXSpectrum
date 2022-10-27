@@ -4,3 +4,5 @@ This is the repository that uses the original <a href="https://github.com/LeungS
 ```
 python Trainer.py
 ```
+
+This repository is not fully finished.
