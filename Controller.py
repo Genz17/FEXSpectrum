@@ -58,7 +58,6 @@ class Controller(nn.Module):
                     action = prob.multinomial(1)
 
             actions = torch.cat([actions,action],dim=1)
-            print(prob.gather(1, action))
             selectedProbLogits = torch.cat([selectedProbLogits, prob.gather(1, action)], dim=1)
         return actions, selectedProbLogits
     def TotalOP(self):

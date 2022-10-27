@@ -38,7 +38,6 @@ def train(model, dim, max_iter, f, real_func):
         print('-----------step:{}---------------'.format(step))
 
         actions, selectedProbLogits = model.sample()
-        print(selectedProbLogits)
         treeBuffer = TreeTrain(f, model, actions, domain, T, dim, 1, real_func)
 
         errList = torch.zeros(model.batchSize)
@@ -86,14 +85,15 @@ def train(model, dim, max_iter, f, real_func):
 
 if __name__ == '__main__':
     dim = 2
-    outNum = 16
+    outNum = 4
+    medNum = outNum//2
     func = lambda xt:torch.exp(torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)))-1
-    print('We are using func exp(sin(2\\pi t)\\Prod(x_i^2-1).')
+    # print('We are using func exp(sin(2\\pi t)\\Prod(x_i^2-1).')
     # func = lambda xt:torch.sin(2*math.pi*xt[:,-1].view(-1,1))*((torch.prod(xt[:,:-1]**2-1,1)).view(-1,1))
     # func = lambda xt:(xt[:,-1].view(-1,1))*(torch.prod(xt[:,:-1]**2-1,1)).view(-1,1)
     f = lambda xt : RHS4Heat(func,xt)
     # f = lambda xt:(torch.prod(xt[:,:-1]**2-1,1)).view(-1,1) - 2*((xt[:,-1])*((xt[:,0]**2-1)+(xt[:,1]**2-1))).view(-1,1)
 
-    tree = BinaryTree.TrainableTree(dim, outNum).cuda()
+    tree = BinaryTree.TrainableTree(dim, outNum, medNum).cuda()
     model = Controller(tree, outNum).cuda()
     train(model, dim, 500, f, func)

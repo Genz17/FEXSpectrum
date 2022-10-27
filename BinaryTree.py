@@ -64,31 +64,31 @@ def BasicTreeGen():
     tree.rightchild.insertLeft(False)
     tree.rightchild.insertRight(False)
 
-    tree.leftchild.leftchild.insertLeft(True)
-    tree.leftchild.leftchild.insertRight(True)
-    tree.leftchild.rightchild.insertLeft(True)
-    tree.leftchild.rightchild.insertRight(True)
-    tree.rightchild.leftchild.insertLeft(True)
-    tree.rightchild.leftchild.insertRight(True)
-    tree.rightchild.rightchild.insertLeft(True)
-    tree.rightchild.rightchild.insertRight(True)
+    tree.leftchild.leftchild.insertLeft(False)
+    tree.leftchild.leftchild.insertRight(False)
+    tree.leftchild.rightchild.insertLeft(False)
+    tree.leftchild.rightchild.insertRight(False)
+    tree.rightchild.leftchild.insertLeft(False)
+    tree.rightchild.leftchild.insertRight(False)
+    tree.rightchild.rightchild.insertLeft(False)
+    tree.rightchild.rightchild.insertRight(False)
 
-    # tree.leftchild.leftchild.leftchild.insertLeft(True)
-    # tree.leftchild.leftchild.leftchild.insertRight(True)
-    # tree.leftchild.leftchild.rightchild.insertLeft(True)
-    # tree.leftchild.leftchild.rightchild.insertRight(True)
-    # tree.leftchild.rightchild.leftchild.insertLeft(True)
-    # tree.leftchild.rightchild.leftchild.insertRight(True)
-    # tree.leftchild.rightchild.rightchild.insertLeft(True)
-    # tree.leftchild.rightchild.rightchild.insertRight(True)
-    # tree.rightchild.leftchild.leftchild.insertLeft(True)
-    # tree.rightchild.leftchild.leftchild.insertRight(True)
-    # tree.rightchild.leftchild.rightchild.insertLeft(True)
-    # tree.rightchild.leftchild.rightchild.insertRight(True)
-    # tree.rightchild.rightchild.leftchild.insertLeft(True)
-    # tree.rightchild.rightchild.leftchild.insertRight(True)
-    # tree.rightchild.rightchild.rightchild.insertLeft(True)
-    # tree.rightchild.rightchild.rightchild.insertRight(True)
+    tree.leftchild.leftchild.leftchild.insertLeft(True)
+    tree.leftchild.leftchild.leftchild.insertRight(True)
+    tree.leftchild.leftchild.rightchild.insertLeft(True)
+    tree.leftchild.leftchild.rightchild.insertRight(True)
+    tree.leftchild.rightchild.leftchild.insertLeft(True)
+    tree.leftchild.rightchild.leftchild.insertRight(True)
+    tree.leftchild.rightchild.rightchild.insertLeft(True)
+    tree.leftchild.rightchild.rightchild.insertRight(True)
+    tree.rightchild.leftchild.leftchild.insertLeft(True)
+    tree.rightchild.leftchild.leftchild.insertRight(True)
+    tree.rightchild.leftchild.rightchild.insertLeft(True)
+    tree.rightchild.leftchild.rightchild.insertRight(True)
+    tree.rightchild.rightchild.leftchild.insertLeft(True)
+    tree.rightchild.rightchild.leftchild.insertRight(True)
+    tree.rightchild.rightchild.rightchild.insertLeft(True)
+    tree.rightchild.rightchild.rightchild.insertRight(True)
     NodeNumCompute(tree)
     return tree
 
@@ -159,11 +159,11 @@ def LeaveNumCompute(tree):
     return leaveList
 
 class TrainableTree(nn.Module):
-    def __init__(self, dim, outNum):
+    def __init__(self, dim, outNum, medNum):
         super(TrainableTree, self).__init__()
         self.dim                = dim
         self.tree               = BasicTreeGen()
-        self.medNum             = 4
+        self.medNum             = medNum
         self.outNum             = outNum
         # self.linearTransform    = {str(i): nn.Linear(dim, outNum) for i in LeaveNumCompute(self.tree)}
         # self.linearTransform    = nn.ModuleDict(self.linearTransform)
@@ -199,7 +199,7 @@ class TrainableTree(nn.Module):
 
     def OperationsRefresh(self):
         for key in self.operators:
-            if type(self.operators[key]) == type(UnaryOperation(unary_functions[0], 1,1)):
+            if type(self.operators[key]) == type(UnaryOperation(unary_functions[0], 1,1,1)):
                 nn.init.kaiming_uniform_(self.operators[key].li.weight)
                 nn.init.zeros_(self.operators[key].li.bias)
                 self.operators[key].li.weight = nn.Parameter(self.operators[key].li.weight.to(torch.float64)/torch.norm(self.operators[key].li.weight))
@@ -225,15 +225,14 @@ class TrainableTree(nn.Module):
             opList = [0 for i in range(tree.count)]
         for ii in range(1, tree.count+1):
             i = opList[ii-1].item()
-            print(str((ShowTree(tree,ii).count, i)))
             if ShowTree(tree, ii).is_unary:
                 if ii == tree.count:
-                    self.operators.update({str((ShowTree(tree,ii).count, i)):UnaryOperation(unary_functions[i], self.medNum, self.outNum)})
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):UnaryOperation(unary_functions[i], self.medNum, self.outNum, ii)})
                 else:
-                    self.operators.update({str((ShowTree(tree,ii).count, i)):UnaryOperation(unary_functions[i], self.medNum, self.medNum)})
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):UnaryOperation(unary_functions[i], self.medNum, self.medNum, ii)})
             else:
                 if ii == tree.count:
-                    self.operators.update({str((ShowTree(tree,ii).count, i)):BinaryOperation(binary_functions[i], self.medNum, self.outNum)})
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):BinaryOperation(binary_functions[i], self.medNum, self.outNum, ii)})
                 else:
-                    self.operators.update({str((ShowTree(tree,ii).count, i)):BinaryOperation(binary_functions[i], self.medNum, self.medNum)})
+                    self.operators.update({str((ShowTree(tree,ii).count, i)):BinaryOperation(binary_functions[i], self.medNum, self.medNum, ii)})
         self.operators = nn.ModuleDict(self.operators)

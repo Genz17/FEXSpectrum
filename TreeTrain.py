@@ -33,8 +33,8 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
         model.tree.LinearGen()
         model.tree.OperationsRefresh()
 
-        optimizer = torch.optim.Adam(model.tree.parameters(), lr=1e-1)
-        for _ in range(15):
+        optimizer = torch.optim.Adam(model.tree.parameters(), lr=1e-2)
+        for _ in range(0):
             optimizer.zero_grad()
             loss = 0
             for j in range(1, model.outNum+3):
@@ -56,11 +56,12 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 y = real_func(XT).view(X.shape[0],1)
                 a = torch.sum((z-y)**2,0).view(1)
                 b = torch.sum(y**2,0).view(1)
-                relerr = torch.sqrt(a/b)
-                print('relerr: {}'.format(relerr))
+                print(a,b)
+                # relerr = torch.sqrt(a/b)
+                # print('relerr: {}'.format(relerr))
 
 
-        optimizer = torch.optim.LBFGS(model.tree.parameters(), lr=0.75, max_iter=30)
+        optimizer = torch.optim.LBFGS(model.tree.parameters(), lr=2, max_iter=40)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 400, eta_min=0.01, last_epoch=-1, verbose=False)
 
         def closure():
@@ -85,8 +86,9 @@ def TreeTrain(f, model, batchOperations, domain, T, dim, order, real_func):
                 y = real_func(XT).view(X.shape[0],1)
                 a = torch.sum((z-y)**2,0).view(1)
                 b = torch.sum(y**2,0).view(1)
-                relerr = torch.sqrt(a/b)
-                print('relerr: {}'.format(relerr))
+                print(a,b)
+                # relerr = torch.sqrt(a/b)
+                # print('relerr: {}'.format(relerr))
             return loss
 
         optimizer.step(closure)
